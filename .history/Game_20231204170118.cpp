@@ -33,7 +33,7 @@ void Game::processCommand(const string& command) {
         string enemyId = lowercaseCommand.substr(5); 
         kill(enemyId);
     } else {
-        cout << "Invalid command. Type 'look around', 'go xxx', 'pick xxx', or 'kill xxx', or quit, or inventory." << endl;
+        cout << "Invalid command. Type 'look around', 'go xxx', 'pick xxx', or 'kill xxx', or quit." << endl;
     }
 }
 
