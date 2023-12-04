@@ -25,7 +25,7 @@ void runGameLoop(Game& game) {
         cout << "Enter a command: ";
         getline(cin, userInput);
 
-        if (userInput == "quit") {
+        if (userInput == "quit" || userInput == "exit") {
             break; // Exit the loop if the user types "quit" or "exit"
         }
 
@@ -40,19 +40,11 @@ void runGameLoop(Game& game) {
                 cout << "You need to specify a direction to go." << endl;
             }
         } else if (userInput.find("pick") != string::npos) {
-            if (userInput.length() > 5){
-                string objectId = userInput.substr(5); 
-                game.pick(objectId);
-            } else {
-                cout << "You need to specify an item id to pick up." << endl;
-            }
+            string objectId = userInput.substr(5); 
+            game.pick(objectId);
         } else if (userInput.find("kill") != string::npos) {
-            if (userInput.length() > 5){
-                string enemyId = userInput.substr(5); 
-                game.kill(enemyId);
-            } else {
-                cout << "You need to specify an enemy id to kill." << endl;
-            }
+            string enemyId = userInput.substr(5); 
+            game.kill(enemyId);
         } else {
             game.processCommand(userInput);
         }

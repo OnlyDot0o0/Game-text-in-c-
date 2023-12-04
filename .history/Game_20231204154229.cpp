@@ -38,74 +38,60 @@ void Game::processCommand(const string& command) {
 }
 
 void Game::pick(const string& objectId) {
-    // Check if the specified object is in the current room
-    if (isObjectInCurrentRoom(objectId)) {
-        // Add the object to the player's inventory
-        mapData.player.inventory.push_back(objectId);
-        std::cout << "You pick up the " << objectId << "." << std::endl;
+    auto object = find_if(
+        mapData.objects.begin(), mapData.objects.end(),
+        [this, &objectId](const Object& obj) { return obj.id == objectId && obj.initialRoom == currentRoom.id; });
 
-        // Find the object in the objects list and update its initialRoom to an empty string
-        for (auto& object : mapData.objects) {
-            if (object.id == objectId) {
-                object.initialRoom = "";
-                break;
-            }
+    if (object != mapData.objects.end()) {
+        if (mapData.mapType == MapType::Map1 && object->id == "gun") {
+            hasGun = true;
+            cout << "You picked up a " << object->id << "." << endl;
         }
+
+        // Map2
+        if (mapData.mapType == MapType::Map2 && object->id == "silver bullet") {
+            hasSilverBullet = true;
+            cout << "You picked up a " << object->id << "." << endl;
+        }
+
+        // Map3
+        if (mapData.mapType == MapType::Map3 &&
+            (object->id == "red gem" || object->id == "green gem" || object->id == "blue gem")) {
+            collectedGems.push_back(object->id);
+            cout << "You picked up a " << object->id << "." << endl;
+        }
+
     } else {
-        // Error: The specified object is not in this room
-        std::cerr << "The " << objectId << " is not in this room!" << std::endl;
+        cout << "Error: Object not found or not in this room." << endl;
     }
 }
 
 bool Game::isObjectInCurrentRoom(const string& objectId) const {
     // Debug Print: Print player's current room for debugging
-    std::cout << "Current Room ID: " << mapData.player.initialRoom << std::endl;
+    std::cout << "Current Room ID: " << Player.initialRoom << std::endl;
 
     // Check if the specified object is in the objects list of the current room
-    for (const auto& room : mapData.rooms) {
+    for (const auto& room : rooms) {
         // Debug Print: Print each room's ID during iteration for debugging
         std::cout << "Checking Room ID: " << room.id << std::endl;
 
-        if (room.id == mapData.player.initialRoom) {
-            for (const auto& object : mapData.objects) {
-                if (object.id == objectId && object.initialRoom == room.id) {
-                    // Debug Print: Print whether the object is found for debugging
-                    std::cout << "Object " << objectId << " found in room." << std::endl;
-                    return true;
-                }
-            }
+        if (room.id == player.currentRoom) {
+            auto it = std::find(room.objects.begin(), room.objects.end(), objectId);
+
             // Debug Print: Print whether the object is found for debugging
-            std::cout << "Object " << objectId << " not found in room." << std::endl;
-            return false;
+            if (it != room.objects.end()) {
+                std::cout << "Object " << objectId << " found in room." << std::endl;
+            } else {
+                std::cout << "Object " << objectId << " not found in room." << std::endl;
+            }
+
+            return it != room.objects.end();
         }
     }
 
     // Error: Current room not found
     std::cerr << "Error: Current room not found!" << std::endl;
     return false;
-}
-
-void Game::removeObjectFromRoom(const std::string& objectId, const std::string& roomId) {
-    // Iterate through rooms to find the specified room
-    for (auto& room : mapData.rooms) {
-        // Check if the current room matches the specified room ID
-        if (room.id == roomId) {
-            // Iterate through objects to find the specified object
-            for (auto it = mapData.objects.begin(); it != mapData.objects.end(); ) {
-                // Check if the current object matches the specified object ID and is in the specified room
-                if (it->id == objectId && it->initialRoom == roomId) {
-                    // Erase the specified object from the objects list
-                    it = mapData.objects.erase(it);
-                    return; // Exit the function once the object is removed
-                } else {
-                    ++it;
-                }
-            }
-        }
-    }
-
-    // Error: Specified room not found
-    std::cerr << "Error: Room not found!" << std::endl;
 }
 
 

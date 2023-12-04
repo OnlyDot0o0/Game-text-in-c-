@@ -12,7 +12,7 @@ using namespace std;
 //     Map2,
 //     Map3,
 //     Map4,
-//
+
 // };
 
 class Room {
@@ -43,9 +43,6 @@ public:
 class Player {
 public:
     std::string initialRoom;
-    std::vector<std::string> inventory;
-
-    bool hasObject(const std::string& objectId) const;
 };
 
 class Objective {
@@ -56,7 +53,7 @@ public:
 
 class MapData {
 public:
-    //MapType mapType;  
+    MapType mapType;  
     std::vector<Room> rooms;
     std::vector<Object> objects;
     std::vector<Enemy> enemies;
@@ -66,10 +63,6 @@ public:
 
 class Game {
 public:
-
-
-
-
     Game(const string& mapFileName);
     void startGame();
     void processCommand(const string& command);
@@ -78,10 +71,8 @@ public:
     void go(const string& direction);
     void pick(const string& objectId);
     void kill (const string& enemyId);
-    bool isObjectInCurrentRoom(const string& objectId) const;
-    void removeObjectFromRoom(const std::string& objectId, const std::string& roomId);
 
-
+private:
     bool hasGun;
     bool hasSilverBullet;
     bool enemyDefeated(const :: string &enemyId);

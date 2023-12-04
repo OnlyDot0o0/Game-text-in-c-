@@ -38,23 +38,32 @@ void Game::processCommand(const string& command) {
 }
 
 void Game::pick(const string& objectId) {
-    // Check if the specified object is in the current room
-    if (isObjectInCurrentRoom(objectId)) {
-        // Add the object to the player's inventory
-        mapData.player.inventory.push_back(objectId);
-        std::cout << "You pick up the " << objectId << "." << std::endl;
+    auto object = find_if(
+        mapData.objects.begin(), mapData.objects.end(),
+        [this, &objectId](const Object& obj) { return obj.id == objectId && obj.initialRoom == currentRoom.id; });
 
-        // Find the object in the objects list and update its initialRoom to an empty string
-        for (auto& object : mapData.objects) {
-            if (object.id == objectId) {
-                object.initialRoom = "";
-                break;
-            }
-        }
-    } else {
-        // Error: The specified object is not in this room
-        std::cerr << "The " << objectId << " is not in this room!" << std::endl;
-    }
+    // if (object != mapData.objects.end()) {
+    //     if (mapData.mapType == MapType::Map1 && object->id == "gun") {
+    //         hasGun = true;
+    //         cout << "You picked up a " << object->id << "." << endl;
+    //     }
+
+    //     // Map2
+    //     if (mapData.mapType == MapType::Map2 && object->id == "silver bullet") {
+    //         hasSilverBullet = true;
+    //         cout << "You picked up a " << object->id << "." << endl;
+    //     }
+
+    //     // Map3
+    //     if (mapData.mapType == MapType::Map3 &&
+    //         (object->id == "red gem" || object->id == "green gem" || object->id == "blue gem")) {
+    //         collectedGems.push_back(object->id);
+    //         cout << "You picked up a " << object->id << "." << endl;
+    //     }
+
+    // } else {
+    //     cout << "Error: Object not found or not in this room." << endl;
+    // }
 }
 
 bool Game::isObjectInCurrentRoom(const string& objectId) const {

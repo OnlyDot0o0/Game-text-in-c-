@@ -43,9 +43,6 @@ public:
 class Player {
 public:
     std::string initialRoom;
-    std::vector<std::string> inventory;
-
-    bool hasObject(const std::string& objectId) const;
 };
 
 class Objective {
@@ -66,10 +63,6 @@ public:
 
 class Game {
 public:
-
-
-
-
     Game(const string& mapFileName);
     void startGame();
     void processCommand(const string& command);
@@ -78,8 +71,7 @@ public:
     void go(const string& direction);
     void pick(const string& objectId);
     void kill (const string& enemyId);
-    bool isObjectInCurrentRoom(const string& objectId) const;
-    void removeObjectFromRoom(const std::string& objectId, const std::string& roomId);
+    bool isObjectInCurrentRoom(const string& objectId);
 
 
     bool hasGun;

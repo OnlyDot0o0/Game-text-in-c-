@@ -25,7 +25,7 @@ void runGameLoop(Game& game) {
         cout << "Enter a command: ";
         getline(cin, userInput);
 
-        if (userInput == "quit") {
+        if (userInput == "quit" || userInput == "exit") {
             break; // Exit the loop if the user types "quit" or "exit"
         }
 

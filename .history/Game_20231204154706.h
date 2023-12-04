@@ -79,7 +79,6 @@ public:
     void pick(const string& objectId);
     void kill (const string& enemyId);
     bool isObjectInCurrentRoom(const string& objectId) const;
-    void removeObjectFromRoom(const std::string& objectId, const std::string& roomId);
 
 
     bool hasGun;

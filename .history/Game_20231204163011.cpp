@@ -57,6 +57,7 @@ void Game::pick(const string& objectId) {
     }
 }
 
+
 bool Game::isObjectInCurrentRoom(const string& objectId) const {
     // Debug Print: Print player's current room for debugging
     std::cout << "Current Room ID: " << mapData.player.initialRoom << std::endl;
