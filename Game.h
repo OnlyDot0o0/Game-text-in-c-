@@ -7,69 +7,62 @@
 using namespace std;
 #include <unordered_map>
 
-// enum MapType {
-//     Map1,
-//     Map2,
-//     Map3,
-//     Map4,
-//
-// };
+
 
 class Room {
 public:
-    std::string id;
-    std::string desc;
-    std::unordered_map<std::string, std::string> exits;
+    string id;
+    string desc;
+    unordered_map<string, string> exits;
 };
 
 class Object {
 public:
-    std::string id;
-    std::string desc;
-    std::string initialRoom;
+    string id;
+    string desc;
+    string initialRoom;
+    bool isPickedUp; //track whether the object is picked up.
+
+    Object() : isPickedUp(false) {}
 };
+
 
 class Enemy {
 public:
-    std::string id;
-    std::string desc;
+    string id;
+    string desc;
     int aggressiveness;
-    std::string initialRoom;
-    std::vector<std::string> killedBy;
+    string initialRoom;
+    vector<string> killedBy;
     bool isKilled;
     Enemy(): isKilled(false){}
 };
 
 class Player {
 public:
-    std::string initialRoom;
-    std::vector<std::string> inventory;
-
-    bool hasObject(const std::string& objectId) const;
+    string initialRoom;
+    vector<string> inventory;
+    bool hasObject(const string& objectId) const;
 };
 
 class Objective {
 public:
-    std::string type;
-    std::vector<std::string> what;
+    string type;
+    vector<string> what;
 };
 
 class MapData {
 public:
     //MapType mapType;  
-    std::vector<Room> rooms;
-    std::vector<Object> objects;
-    std::vector<Enemy> enemies;
+    vector<Room> rooms;
+    vector<Object> objects;
+    vector<Enemy> enemies;
     Player player;
     Objective objective;
 };
 
 class Game {
 public:
-
-
-
-
     Game(const string& mapFileName);
     void startGame();
     void processCommand(const string& command);
@@ -79,17 +72,13 @@ public:
     void pick(const string& objectId);
     void kill (const string& enemyId);
     bool isObjectInCurrentRoom(const string& objectId) const;
-    void removeObjectFromRoom(const std::string& objectId, const std::string& roomId);
-    void displayInventory() const;
-
-
-    bool hasGun;
-    bool hasSilverBullet;
-    bool enemyDefeated(const :: string &enemyId);
+    void removeObjectFromRoom(const string& objectId, const string& roomId);
+    bool enemyDefeated(const string &enemyId);
     MapData loadMapData(const string& mapFileName);
     void printRoomDescription(const Room& room);
     void printObjectDescription(const Object& object);
     void printEnemyDescription(const Enemy& enemy);
+    void displayInventory() const;
     
     
     MapData mapData;
