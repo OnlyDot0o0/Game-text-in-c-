@@ -51,13 +51,6 @@ void Game::displayInventory() const {
 }
 
 void Game::pick(const string& objectId) {
-    // Check if the object is already in the player's inventory
-    auto inventoryIter = find(mapData.player.inventory.begin(), mapData.player.inventory.end(), objectId);
-    if (inventoryIter != mapData.player.inventory.end()) {
-        cerr << "You have already picked up the " << objectId << "." << endl;
-        return;
-    }
-
     if(isObjectInCurrentRoom(objectId)){
         // Check if the specified object is in the current room
         Object* objectToPick = nullptr;
@@ -76,6 +69,9 @@ void Game::pick(const string& objectId) {
 
                 // Set the isPickedUp flag to true
                 objectToPick->isPickedUp = true;
+            } else {
+                // Error: The specified object has already been picked up
+                cerr << "You have already picked up the " << objectId << "." << endl;
             }
         } else {
             // Error: The specified object is not in this room
@@ -85,7 +81,6 @@ void Game::pick(const string& objectId) {
         cerr << "You can't pick up " << objectId << "." << endl;
     }
 }
-
 
 
 bool Game::isObjectInCurrentRoom(const string& objectId) const {

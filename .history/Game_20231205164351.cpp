@@ -51,42 +51,30 @@ void Game::displayInventory() const {
 }
 
 void Game::pick(const string& objectId) {
-    // Check if the object is already in the player's inventory
-    auto inventoryIter = find(mapData.player.inventory.begin(), mapData.player.inventory.end(), objectId);
-    if (inventoryIter != mapData.player.inventory.end()) {
-        cerr << "You have already picked up the " << objectId << "." << endl;
-        return;
-    }
-
     if(isObjectInCurrentRoom(objectId)){
         // Check if the specified object is in the current room
-        Object* objectToPick = nullptr;
-        for (auto& object : mapData.objects) {
-            if (object.id == objectId && object.initialRoom == currentRoom.id) {
-                objectToPick = &object;
-                break;
-            }
-        }
+        auto objectIter = find_if(
+            mapData.objects.begin(), mapData.objects.end(),
+            [&objectId, this](const Object& object) {
+                return object.id == objectId && object.initialRoom == currentRoom.id && !object.isPickedUp;
+            });
 
-        if (objectToPick != nullptr) {
-            if (!objectToPick->isPickedUp) {
-                // Add the object to the player's inventory
-                mapData.player.inventory.push_back(objectId);
-                cout << "You picked up the " << objectId << "." << endl;
+        if (objectIter != mapData.objects.end()) {
+            // Add the object to the player's inventory
+            mapData.player.inventory.push_back(objectId);
+            cout << "You picked up the " << objectId << "." << endl;
 
-                // Set the isPickedUp flag to true
-                objectToPick->isPickedUp = true;
-            }
+            // Set the isPickedUp flag to true
+            objectIter->isPickedUp = true;
         } else {
-            // Error: The specified object is not in this room
-            cerr << "The " << objectId << " is not in this room." << endl;
+            // Error: The specified object is not in this room or has already been picked up
+            cerr << "You have already picked the " << objectId << endl;
         }
     } else {
-        cerr << "You can't pick up " << objectId << "." << endl;
+            cerr << "You can't pick up " << objectId << endl;
     }
+
 }
-
-
 
 bool Game::isObjectInCurrentRoom(const string& objectId) const {
     // Check if the specified object is in the current room

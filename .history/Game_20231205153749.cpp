@@ -51,57 +51,50 @@ void Game::displayInventory() const {
 }
 
 void Game::pick(const string& objectId) {
-    // Check if the object is already in the player's inventory
-    auto inventoryIter = find(mapData.player.inventory.begin(), mapData.player.inventory.end(), objectId);
-    if (inventoryIter != mapData.player.inventory.end()) {
-        cerr << "You have already picked up the " << objectId << "." << endl;
-        return;
-    }
-
-    if(isObjectInCurrentRoom(objectId)){
-        // Check if the specified object is in the current room
-        Object* objectToPick = nullptr;
+    if (isObjectInCurrentRoom(objectId)) {
         for (auto& object : mapData.objects) {
-            if (object.id == objectId && object.initialRoom == currentRoom.id) {
-                objectToPick = &object;
-                break;
-            }
-        }
+            if (object.id == objectId) {
+                if (!object.isPickedUp) {
+                    // Add the object to the player's inventory
+                    mapData.player.inventory.push_back(objectId);
+                    cout << "You picked up the " << objectId << "." << endl;
 
-        if (objectToPick != nullptr) {
-            if (!objectToPick->isPickedUp) {
-                // Add the object to the player's inventory
-                mapData.player.inventory.push_back(objectId);
-                cout << "You picked up the " << objectId << "." << endl;
-
-                // Set the isPickedUp flag to true
-                objectToPick->isPickedUp = true;
+                    // Set the isPickedUp flag to true
+                    object.isPickedUp = true;
+                } else {
+                    // Error: The specified object has already been picked up
+                    cerr << "You have already picked up the " << objectId << "." << endl;
+                }
+                return;
             }
-        } else {
-            // Error: The specified object is not in this room
-            cerr << "The " << objectId << " is not in this room." << endl;
         }
     } else {
-        cerr << "You can't pick up " << objectId << "." << endl;
+        // Error: The specified object is not in this room
+        cerr << "The " << objectId << " is not in this room." << endl;
     }
 }
-
-
 
 bool Game::isObjectInCurrentRoom(const string& objectId) const {
-    // Check if the specified object is in the current room
-    for (const auto& object : mapData.objects) {
-        if (object.id == objectId && object.initialRoom == currentRoom.id && !object.isPickedUp) {
+    // Check if the specified object is in the objects list of the current room
+    for (const auto& room : mapData.rooms) {
+        if (room.id == mapData.player.initialRoom) {
+            for (const auto& object : mapData.objects) {
+                if (object.id == objectId && object.initialRoom == room.id) {
+                    // Debug Print: Print whether the object is found for debugging
+                    // std::cout << "Object " << objectId << " found in room." << std::endl;
+                    return true;
+                }
+            }
             // Debug Print: Print whether the object is found for debugging
-            // std::cout << "Object " << objectId << " found in room." << std::endl;
-            return true;
+            //std::cout << "Object " << objectId << " not found in room." << std::endl;
+            return false;
         }
     }
-    // Debug Print: Print whether the object is found for debugging
-    //std::cout << "Object " << objectId << " not found in room." << std::endl;
+
+    // Error: Current room not found
+    cerr << "Error: Current room not found!" << endl;
     return false;
 }
-
 
 void Game::removeObjectFromRoom(const string& objectId, const string& roomId) {
     // Iterate through rooms to find the specified room
