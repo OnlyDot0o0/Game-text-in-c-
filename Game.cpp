@@ -7,7 +7,7 @@ using namespace std;
 
 using json = nlohmann::json;
 
-Game::Game(const string& mapFileName): hasGun(false),hasSilverBullet(false) {
+Game::Game(const string& mapFileName) {
     mapData = loadMapData(mapFileName);
     currentRoom = mapData.rooms.front(); 
 }
@@ -24,7 +24,7 @@ void Game::processCommand(const string& command) {
     if (lowercaseCommand.find("look around") != string::npos) {
         lookAround();
     } else if (lowercaseCommand.substr(0, 2) == "go") {
-        std::string direction = lowercaseCommand.substr(3);
+        string direction = lowercaseCommand.substr(3);
         go(direction);
     } else if (lowercaseCommand.find("pick") != string::npos) {
         string objectId = lowercaseCommand.substr(5); 
@@ -33,59 +33,67 @@ void Game::processCommand(const string& command) {
         string enemyId = lowercaseCommand.substr(5); 
         kill(enemyId);
     } else {
-        cout << "Invalid command. Type 'look around', 'go xxx', 'pick xxx', or 'kill xxx', or quit, or inventory." << endl;
+        cout << "Invalid command. Type 'look around', 'go xxx', 'pick xxx', or 'kill xxx', or quit. or inventory" << endl;
     }
 }
-
+void Game::displayInventory() const {
+    // Check if the player's inventory is empty
+    if (mapData.player.inventory.empty()) {
+        std::cout << "Your inventory is empty." << std::endl;
+    } else {
+        // Display the contents of the player's inventory
+        std::cout << "Inventory: ";
+        for (const auto& item : mapData.player.inventory) {
+            std::cout << item << " ";
+        }
+        std::cout << std::endl;
+    }
+}
 void Game::pick(const string& objectId) {
     // Check if the specified object is in the current room
-    if (isObjectInCurrentRoom(objectId)) {
+    auto objectIter = find_if(
+        mapData.objects.begin(), mapData.objects.end(),
+        [&objectId, this](const Object& object) {
+            return object.id == objectId && object.initialRoom == currentRoom.id && !object.isPickedUp;
+        });
+
+    if (objectIter != mapData.objects.end()) {
         // Add the object to the player's inventory
         mapData.player.inventory.push_back(objectId);
-        std::cout << "You pick up the " << objectId << "." << std::endl;
+        cout << "You picked up the " << objectId << "." << endl;
 
-        // Find the object in the objects list and update its initialRoom to an empty string
-        for (auto& object : mapData.objects) {
-            if (object.id == objectId) {
-                object.initialRoom = "";
-                break;
-            }
-        }
+        // Set the isPickedUp flag to true
+        objectIter->isPickedUp = true;
     } else {
-        // Error: The specified object is not in this room
-        std::cerr << "The " << objectId << " is not in this room!" << std::endl;
+        // Error: The specified object is not in this room or has already been picked up
+        cerr << "You have already picked the " << objectId << endl;
     }
 }
 
-bool Game::isObjectInCurrentRoom(const string& objectId) const {
-    // Debug Print: Print player's current room for debugging
-    std::cout << "Current Room ID: " << mapData.player.initialRoom << std::endl;
 
+bool Game::isObjectInCurrentRoom(const string& objectId) const {
     // Check if the specified object is in the objects list of the current room
     for (const auto& room : mapData.rooms) {
-        // Debug Print: Print each room's ID during iteration for debugging
-        std::cout << "Checking Room ID: " << room.id << std::endl;
-
         if (room.id == mapData.player.initialRoom) {
             for (const auto& object : mapData.objects) {
                 if (object.id == objectId && object.initialRoom == room.id) {
                     // Debug Print: Print whether the object is found for debugging
-                    std::cout << "Object " << objectId << " found in room." << std::endl;
+                    // std::cout << "Object " << objectId << " found in room." << std::endl;
                     return true;
                 }
             }
             // Debug Print: Print whether the object is found for debugging
-            std::cout << "Object " << objectId << " not found in room." << std::endl;
+            //std::cout << "Object " << objectId << " not found in room." << std::endl;
             return false;
         }
     }
 
     // Error: Current room not found
-    std::cerr << "Error: Current room not found!" << std::endl;
+    cerr << "Error: Current room not found!" << endl;
     return false;
 }
 
-void Game::removeObjectFromRoom(const std::string& objectId, const std::string& roomId) {
+void Game::removeObjectFromRoom(const string& objectId, const string& roomId) {
     // Iterate through rooms to find the specified room
     for (auto& room : mapData.rooms) {
         // Check if the current room matches the specified room ID
@@ -105,40 +113,50 @@ void Game::removeObjectFromRoom(const std::string& objectId, const std::string& 
     }
 
     // Error: Specified room not found
-    std::cerr << "Error: Room not found!" << std::endl;
+    cerr << "Error: Room not found!" << endl;
 }
-
 
 void Game::kill(const string& enemyId) {
-    auto enemy = find_if(
+    auto enemyIter = find_if(
         mapData.enemies.begin(), mapData.enemies.end(),
-        [this, &enemyId](const Enemy& e) { return e.id == enemyId && e.initialRoom == currentRoom.id; });
+        [&enemyId](const Enemy& enemy) {
+            return enemy.id == enemyId && !enemy.isKilled;
+        });
 
-    if (enemy != mapData.enemies.end()) {
-        if(hasGun || hasSilverBullet){
+    if (enemyIter != mapData.enemies.end()) {
+        // Check if the required items are in the player's inventory
+        bool hasRequiredItems = true;
+        vector<string> missingItems;  // Keep track of missing items for later print
+
+        for (const auto& item : enemyIter->killedBy) {
+            auto itemIter = find(mapData.player.inventory.begin(), mapData.player.inventory.end(), item);
+            if (itemIter == mapData.player.inventory.end()) {
+                hasRequiredItems = false;
+                missingItems.push_back(item);
+            }
+        }
+
+        if (hasRequiredItems) {
+            // Mark the enemy as killed
+            enemyIter->isKilled = true;
             cout << "You killed the " << enemyId << "." << endl;
-        }
-        else{
-            cout<<"You cant kill the " << enemyId <<  "because you are weak hehe"<<endl;
-        }
 
-
+            // Remove required items from the player's inventory
+            for (const auto& item : enemyIter->killedBy) {
+                auto itemIter = find(mapData.player.inventory.begin(), mapData.player.inventory.end(), item);
+                if (itemIter != mapData.player.inventory.end()) {
+                    mapData.player.inventory.erase(itemIter);
+                }
+            }
+        } else {
+            cout << "You don't have all the required items (" << enemyId << " needs: ";
+            for (const auto& item : missingItems) {
+                cout << item << " ";
+            }
+            cout << ")." << endl;
+        }
     } else {
-        cout << "Error: Enemy not found or not in this room." << endl;
-    }
-}
-
-void Game::displayInventory() const {
-    // Check if the player's inventory is empty
-    if (mapData.player.inventory.empty()) {
-        std::cout << "Your inventory is empty." << std::endl;
-    } else {
-        // Display the contents of the player's inventory
-        std::cout << "Inventory: ";
-        for (const auto& item : mapData.player.inventory) {
-            std::cout << item << " ";
-        }
-        std::cout << std::endl;
+        cerr << "Error: Enemy not found or already killed." << endl;
     }
 }
 
@@ -163,12 +181,12 @@ void Game::go(const string& direction) {
         cout << "Error: Invalid direction." << endl;
     }
 }
-MapData Game::loadMapData(const std::string& mapFileName) {
-    std::ifstream file(mapFileName);
+MapData Game::loadMapData(const string& mapFileName) {
+    ifstream file(mapFileName);
 
     // Check if the file was opened successfully
     if (!file.is_open()) {
-        std::cerr << "Error: Could not open map file '" << mapFileName << "'. Please make sure the file exists and try again." << std::endl;
+        cerr << "Error: Could not open map file '" << mapFileName << "'. Please make sure the file exists and try again." << endl;
     }
     json jsonData;
     file >> jsonData;
@@ -260,7 +278,6 @@ void Game::printEnemyDescription(const Enemy& enemy) {
 
 bool Game::isObjectiveComplete() {
     if (mapData.objective.type == "kill") {
-        // Check if all specified enemies are killed
         for (const auto& enemyId : mapData.objective.what) {
             auto killedEnemy = find_if(
                 mapData.enemies.begin(), mapData.enemies.end(),
