@@ -6,6 +6,7 @@
 #include <vector>
 using namespace std;
 #include <unordered_map>
+#include <set>
 
 
 
@@ -21,10 +22,10 @@ public:
     string id;
     string desc;
     string initialRoom;
-    bool isPickedUp; //track whether the object is picked up.
-
+    bool isPickedUp; // track whether the object is picked up.
     Object() : isPickedUp(false) {}
 };
+
 
 
 class Enemy {
@@ -42,7 +43,6 @@ class Player {
 public:
     string initialRoom;
     vector<string> inventory;
-    bool hasObject(const string& objectId) const;
 };
 
 class Objective {
@@ -79,11 +79,17 @@ public:
     void printObjectDescription(const Object& object);
     void printEnemyDescription(const Enemy& enemy);
     void displayInventory() const;
-    
-    
+    void printHiddenRoomDescription();
+    set<string> usedItems;
+    void use(const string& objectId);
     MapData mapData;
     Room currentRoom;
     vector<string> collectedGems;
+    bool hiddenRoomFound;
+    const string hiddenRoomID = "hiddenRoom";
+    bool keyPicked;
+    static const string key_Id;
+    void useKey();
 };
 
 #endif // GAME_H
