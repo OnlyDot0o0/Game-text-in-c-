@@ -82,7 +82,7 @@ public:
     void printObjectDescription(const Object& object);
     void printEnemyDescription(const Enemy& enemy);
     void displayInventory() const;
-    void handleEnemyActions(const string& command);
+    // void handleEnemyActions(const string& command);
     void moveEnemyToRandomRoom(Enemy& enemy);
     void simulateEnemyMovement();
     MapData mapData;
