@@ -71,11 +71,10 @@ public:
     void go(const string& direction);
     void pick(const string& objectId);
     void kill (const string& enemyId);
-    bool hasRequiredItems(const Enemy& enemy);
-    void handleEnemyAttack(const string& command);
     void removeEnemy(const string& enemyId);
     bool isObjectInCurrentRoom(const string& objectId) const;
     void removeObjectFromRoom(const string& objectId, const string& roomId);
+    bool enemyDefeated(const string &enemyId);
     MapData loadMapData(const string& mapFileName);
     void printRoomDescription(const Room& room);
     void printObjectDescription(const Object& object);

@@ -230,6 +230,28 @@ void Game::go(const string& direction) {
 void Game::handleEnemyAttack(const string& command) {
     cout << "Command received: " << command << endl;
 
+    // Check if there's an enemy in the current room
+    for (auto& enemy : mapData.enemies) {
+        if (enemy.initialRoom == currentRoom.id && !enemy.isKilled) {
+            cout << "Enemy detected in the room." << endl;
+
+            // Check if the command is an attempt to kill the enemy
+            if (command == "kill " + enemy.id) {
+                cout << "Command is an attempt to kill the enemy." << endl;
+
+                // Check if the player has the required items to kill the enemy
+                if (!hasRequiredItems(enemy)) {
+                    cout << "You don't have the required items to kill the enemy!" << endl;
+                    cout << "The " << enemy.id << " attacks you and you die." << endl;
+                    cout << "Game over!" << endl;
+                    exit(0);  // Exit the program
+                } else {
+                    cout << "You have the required items to kill the enemy!" << endl;
+                }
+            }
+        }
+    }
+
     // Check if the command is an attempt to exit the current room
     auto exitIter = currentRoom.exits.find(command);
     if (exitIter != currentRoom.exits.end()) {

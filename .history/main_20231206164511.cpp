@@ -22,7 +22,7 @@ string initializeGame(int argc, char* argv[]) {
 void runGameLoop(Game& game) {
     string userInput;
     while (true) {
-        cout << "\nEnter a command: ";
+        cout << "\n Enter a command: ";
         getline(cin, userInput);
 
         if (userInput == "quit") {

@@ -132,7 +132,7 @@ void Game::kill(const string& enemyId) {
     vector<string> nonExhaustibleItems = {"gun"};
     auto enemyIter = find_if(
         mapData.enemies.begin(), mapData.enemies.end(),
-        [&enemyId](const Enemy& enemy) {
+        &enemyId {
             return enemy.id == enemyId && !enemy.isKilled;
         });
 
@@ -165,6 +165,8 @@ void Game::kill(const string& enemyId) {
         cerr << "Error: Enemy not found or already killed." << endl;
     }
 }
+
+
 bool Game::hasRequiredItems(const Enemy& enemy) {
     vector<string> missingItems;  // Keep track of missing items for later print
 
@@ -229,6 +231,28 @@ void Game::go(const string& direction) {
 
 void Game::handleEnemyAttack(const string& command) {
     cout << "Command received: " << command << endl;
+
+    // Check if there's an enemy in the current room
+    for (auto& enemy : mapData.enemies) {
+        if (enemy.initialRoom == currentRoom.id && !enemy.isKilled) {
+            cout << "Enemy detected in the room." << endl;
+
+            // Check if the command is an attempt to kill the enemy
+            if (command == "kill " + enemy.id) {
+                cout << "Command is an attempt to kill the enemy." << endl;
+
+                // Check if the player has the required items to kill the enemy
+                if (!hasRequiredItems(enemy)) {
+                    cout << "You don't have the required items to kill the enemy!" << endl;
+                    cout << "The " << enemy.id << " attacks you and you die." << endl;
+                    cout << "Game over!" << endl;
+                    exit(0);  // Exit the program
+                } else {
+                    cout << "You have the required items to kill the enemy!" << endl;
+                }
+            }
+        }
+    }
 
     // Check if the command is an attempt to exit the current room
     auto exitIter = currentRoom.exits.find(command);

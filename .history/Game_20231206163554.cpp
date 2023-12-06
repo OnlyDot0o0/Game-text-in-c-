@@ -137,8 +137,19 @@ void Game::kill(const string& enemyId) {
         });
 
     if (enemyIter != mapData.enemies.end()) {
-        // Check if the player has the required items
-        if (hasRequiredItems(*enemyIter)) {
+        // Check if the required items are in the player's inventory
+        bool hasRequiredItems = true;
+        vector<string> missingItems;  // Keep track of missing items for later print
+
+        for (const auto& item : enemyIter->killedBy) {
+            auto itemIter = find(mapData.player.inventory.begin(), mapData.player.inventory.end(), item);
+            if (itemIter == mapData.player.inventory.end()) {
+                hasRequiredItems = false;
+                missingItems.push_back(item);
+            }
+        }
+
+        if (hasRequiredItems) {
             // Mark the enemy as killed
             enemyIter->isKilled = true;
             cout << "You killed the " << enemyId << "." << endl;
@@ -156,35 +167,15 @@ void Game::kill(const string& enemyId) {
 
             removeEnemy(enemyId);
         } else {
-            cout << "You don't have the required items to kill the " << enemyId << "!" << endl;
-            cout << "The " << enemyId << " attacks you and you die." << endl;
-            cout << "Game over!" << endl;
-            exit(0);  // Exit the program
+            cout << "You don't have all the required items (" << enemyId << " needs: ";
+            for (const auto& item : missingItems) {
+                cout << item << " ";
+            }
+            cout << ")." << endl;
         }
     } else {
         cerr << "Error: Enemy not found or already killed." << endl;
     }
-}
-bool Game::hasRequiredItems(const Enemy& enemy) {
-    vector<string> missingItems;  // Keep track of missing items for later print
-
-    for (const auto& item : enemy.killedBy) {
-        auto itemIter = find(mapData.player.inventory.begin(), mapData.player.inventory.end(), item);
-        if (itemIter == mapData.player.inventory.end()) {
-            missingItems.push_back(item);
-        }
-    }
-
-    if (!missingItems.empty()) {
-        cout << "You don't have all the required items (" << enemy.id << " needs: ";
-        for (const auto& item : missingItems) {
-            cout << item << " ";
-        }
-        cout << ")." << endl;
-        return false;
-    }
-
-    return true;
 }
 
 void Game::removeEnemy(const string& enemyId) {
@@ -211,7 +202,6 @@ void Game::lookAround() {
 void Game::go(const string& direction) {
     auto exit = currentRoom.exits.find(direction);
     if (exit != currentRoom.exits.end()) {
-        handleEnemyAttack(direction);
         auto nextRoom = find_if(
             mapData.rooms.begin(), mapData.rooms.end(),
             [&exit](const Room& room) { return room.id == exit->second; });
@@ -228,32 +218,25 @@ void Game::go(const string& direction) {
 }
 
 void Game::handleEnemyAttack(const string& command) {
-    cout << "Command received: " << command << endl;
-
     // Check if the command is an attempt to exit the current room
     auto exitIter = currentRoom.exits.find(command);
     if (exitIter != currentRoom.exits.end()) {
-        cout << "Command is an attempt to exit the current room." << endl;
-
-        // Generate a random number between 0 and 100
-        int randomNum = rand() % 101;
-        cout << "Random number generated: " << randomNum << endl;
-
-        // If the random number is less than or equal to the enemy's aggressiveness, the enemy attacks
+        // Check if there's an enemy in the current room
         for (auto& enemy : mapData.enemies) {
-            if (enemy.initialRoom == currentRoom.id && !enemy.isKilled && randomNum <= enemy.aggressiveness) {
-                cout << "The enemy attacks!" << endl;
-                cout << "The " << enemy.id << " attacks you as you try to leave the room and you die." << endl;
-                cout << "Game over!" << endl;
-                exit(0);  // Exit the program
+            if (enemy.initialRoom == currentRoom.id && !enemy.isKilled) {
+                // Generate a random number between 0 and 100
+                int randomNum = rand() % 101;
+
+                // If the random number is less than or equal to the enemy's aggressiveness, the enemy attacks
+                if (randomNum <= enemy.aggressiveness) {
+                    cout << "The " << enemy.id << " attacks you as you try to leave the room and you die." << endl;
+                    cout << "Game over!" << endl;
+                    exit(0);  // Exit the program
+                }
             }
         }
-    } else {
-        cout << "Command is not an attempt to exit the current room." << endl;
     }
 }
-
-
 
 MapData Game::loadMapData(const string& mapFileName) {
     ifstream file(mapFileName);

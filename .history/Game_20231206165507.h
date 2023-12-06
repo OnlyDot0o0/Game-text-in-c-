@@ -71,7 +71,6 @@ public:
     void go(const string& direction);
     void pick(const string& objectId);
     void kill (const string& enemyId);
-    bool hasRequiredItems(const Enemy& enemy);
     void handleEnemyAttack(const string& command);
     void removeEnemy(const string& enemyId);
     bool isObjectInCurrentRoom(const string& objectId) const;

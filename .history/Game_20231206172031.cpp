@@ -155,16 +155,12 @@ void Game::kill(const string& enemyId) {
             }
 
             removeEnemy(enemyId);
-        } else {
-            cout << "You don't have the required items to kill the " << enemyId << "!" << endl;
-            cout << "The " << enemyId << " attacks you and you die." << endl;
-            cout << "Game over!" << endl;
-            exit(0);  // Exit the program
         }
     } else {
         cerr << "Error: Enemy not found or already killed." << endl;
     }
 }
+
 bool Game::hasRequiredItems(const Enemy& enemy) {
     vector<string> missingItems;  // Keep track of missing items for later print
 
@@ -235,17 +231,30 @@ void Game::handleEnemyAttack(const string& command) {
     if (exitIter != currentRoom.exits.end()) {
         cout << "Command is an attempt to exit the current room." << endl;
 
-        // Generate a random number between 0 and 100
-        int randomNum = rand() % 101;
-        cout << "Random number generated: " << randomNum << endl;
-
-        // If the random number is less than or equal to the enemy's aggressiveness, the enemy attacks
+        // Check if there's an enemy in the current room
         for (auto& enemy : mapData.enemies) {
-            if (enemy.initialRoom == currentRoom.id && !enemy.isKilled && randomNum <= enemy.aggressiveness) {
-                cout << "The enemy attacks!" << endl;
-                cout << "The " << enemy.id << " attacks you as you try to leave the room and you die." << endl;
-                cout << "Game over!" << endl;
-                exit(0);  // Exit the program
+            if (enemy.initialRoom == currentRoom.id && !enemy.isKilled) {
+                cout << "Enemy detected in the room." << endl;
+
+                // Check if the player has the required items to kill the enemy
+                if (!hasRequiredItems(enemy)) {
+                    cout << "You don't have the required items to kill the enemy!" << endl;
+                    cout << "The " << enemy.id << " attacks you as you try to leave the room and you die." << endl;
+                    cout << "Game over!" << endl;
+                    exit(0);  // Exit the program
+                }
+
+                // Generate a random number between 0 and 100
+                int randomNum = rand() % 101;
+                cout << "Random number generated: " << randomNum << endl;
+
+                // If the random number is less than or equal to the enemy's aggressiveness, the enemy attacks
+                if (randomNum <= enemy.aggressiveness) {
+                    cout << "The enemy attacks!" << endl;
+                    cout << "The " << enemy.id << " attacks you as you try to leave the room and you die." << endl;
+                    cout << "Game over!" << endl;
+                    exit(0);  // Exit the program
+                }
             }
         }
     } else {
