@@ -2,32 +2,28 @@
 #include "json.hpp"
 #include <fstream>
 #include <iostream>
-#include <algorithm> 
+#include <algorithm>
+#include <cstdlib>
+#include <ctime>
+#include <random>
 using namespace std;
 
 using json = nlohmann::json;
 
-const string Game:: key_Id = "key";
-// Game class constructor
 Game::Game(const string& mapFileName) {
-    // Load map data from the file
     mapData = loadMapData(mapFileName);
-    // Set the current room to the first room in the map
     currentRoom = mapData.rooms.front(); 
-    keyPicked = false;
 }
 
 void Game::startGame() {
-    // Initialize the game with the player's starting room.
     printRoomDescription(currentRoom);
 }
 
 void Game::processCommand(const string& command) {
-    // Convert to lowercase
+    // Convert the command to lowercase for case-insensitivity
     string lowercaseCommand = command;
     transform(lowercaseCommand.begin(), lowercaseCommand.end(), lowercaseCommand.begin(), ::tolower);
 
-    // Process commands
     if (lowercaseCommand.find("look around") != string::npos) {
         lookAround();
     } else if (lowercaseCommand.substr(0, 2) == "go") {
@@ -39,24 +35,21 @@ void Game::processCommand(const string& command) {
     } else if (lowercaseCommand.find("kill") != string::npos) {
         string enemyId = lowercaseCommand.substr(5); 
         kill(enemyId);
-    } else if (lowercaseCommand == "use key"){
-        useKey();
-    }
-    else {
+    } else {
         cout << "Invalid command. Type 'look around', 'go xxx', 'pick xxx', or 'kill xxx', or 'quit' or 'inventory'" << endl;
     }
 }
 void Game::displayInventory() const {
     // Check if the player's inventory is empty
     if (mapData.player.inventory.empty()) {
-        cout << "Your inventory is empty." << endl;
+        std::cout << "Your inventory is empty." << std::endl;
     } else {
         // Display the contents of the player's inventory
-        cout << "Inventory: ";
+        std::cout << "Inventory: ";
         for (const auto& item : mapData.player.inventory) {
-            cout << item << " ";
+            std::cout << "'"<< item << "' ";
         }
-        cout << endl;
+        std::cout << std::endl;
     }
 }
 
@@ -86,11 +79,10 @@ void Game::pick(const string& objectId) {
 
                 // Set the isPickedUp flag to true
                 objectToPick->isPickedUp = true;
-                if(objectId == key_Id && !keyPicked){
-                    keyPicked=true;
-                    mapData.player.inventory.push_back(objectId);
-                    cout<<"You picked up the "<< objectId << endl;
-                }
+                removeObjectFromRoom(objectId, currentRoom.id);
+                if (find(mapData.objective.what.begin(), mapData.objective.what.end(), objectId) != mapData.objective.what.end()) {
+                collectedGems.push_back(objectId);
+            }
             }
         } else {
             // Error: The specified object is not in this room
@@ -148,19 +140,8 @@ void Game::kill(const string& enemyId) {
         });
 
     if (enemyIter != mapData.enemies.end()) {
-        // Check if the required items are in the player's inventory
-        bool hasRequiredItems = true;
-        vector<string> missingItems;  // Keep track of missing items for later print
-
-        for (const auto& item : enemyIter->killedBy) {
-            auto itemIter = find(mapData.player.inventory.begin(), mapData.player.inventory.end(), item);
-            if (itemIter == mapData.player.inventory.end()) {
-                hasRequiredItems = false;
-                missingItems.push_back(item);
-            }
-        }
-
-        if (hasRequiredItems) {
+        // Check if the player has the required items
+        if (hasRequiredItems(*enemyIter)) {
             // Mark the enemy as killed
             enemyIter->isKilled = true;
             cout << "You killed the " << enemyId << "." << endl;
@@ -175,16 +156,55 @@ void Game::kill(const string& enemyId) {
                     }
                 }
             }
+
+            removeEnemy(enemyId);
         } else {
-            cout << "You don't have all the required items (" << enemyId << " needs: ";
-            for (const auto& item : missingItems) {
-                cout << item << " ";
-            }
-            cout << ")." << endl;
+            cout << "You don't have the required items to kill the " << enemyId << "!" << endl;
+            cout << "The " << enemyId << " attacks you and you die." << endl;
+            cout << "Game over!" << endl;
+            exit(0);  // Exit the program
         }
     } else {
         cerr << "Error: Enemy not found or already killed." << endl;
     }
+}
+bool Game::hasRequiredItems(const Enemy& enemy) {
+    vector<string> missingItems;  // Keep track of missing items for later print
+
+    for (const auto& item : enemy.killedBy) {
+        auto itemIter = find(mapData.player.inventory.begin(), mapData.player.inventory.end(), item);
+        if (itemIter == mapData.player.inventory.end()) {
+            missingItems.push_back(item);
+        }
+    }
+
+    if (!missingItems.empty()) {
+        cout << "You don't have all the required items (" << enemy.id << " needs: ";
+        for (const auto& item : missingItems) {
+            cout << item << " ";
+        }
+        cout << ")." << endl;
+        return false;
+    }
+
+    return true;
+}
+
+void Game::removeEnemy(const string& enemyId) {
+    // Iterate through enemies to find the specified enemy
+    for (auto it = mapData.enemies.begin(); it != mapData.enemies.end(); ) {
+        // Check if the current enemy matches the specified enemy ID and is killed
+        if (it->id == enemyId && it->isKilled) {
+            // Erase the specified enemy from the enemies list
+            it = mapData.enemies.erase(it);
+            return; // Exit the function once the enemy is removed
+        } else {
+            ++it;
+        }
+    }
+
+    // Error: Specified enemy not found or not killed
+    cerr << "Error: Enemy not found or not killed." << endl;
 }
 
 void Game::lookAround() {
@@ -194,6 +214,7 @@ void Game::lookAround() {
 void Game::go(const string& direction) {
     auto exit = currentRoom.exits.find(direction);
     if (exit != currentRoom.exits.end()) {
+        handleEnemyAttack(direction);
         auto nextRoom = find_if(
             mapData.rooms.begin(), mapData.rooms.end(),
             [&exit](const Room& room) { return room.id == exit->second; });
@@ -208,14 +229,75 @@ void Game::go(const string& direction) {
         cout << "Error: Invalid direction." << endl;
     }
 }
-void Game::useKey() {
-    if (currentRoom.id == "room2" && keyPicked && !hiddenRoomFound) {
-        hiddenRoomFound = true;
-        cout << "You found the hidden door. There is an exit to the right." << endl;
+
+void Game::handleEnemyAttack(const string& command) {
+ //   cout << "Command received: " << command << endl;
+
+    // Check if the command is an attempt to exit the current room
+    auto exitIter = currentRoom.exits.find(command);
+    if (exitIter != currentRoom.exits.end()) {
+ //       cout << "Command is an attempt to exit the current room." << endl;
+
+        // Generate a random number between 0 and 100
+        int randomNum = rand() % 101;
+//        cout << "Random number generated: " << randomNum << endl;
+
+        // If the random number is less than or equal to the enemy's aggressiveness, the enemy attacks
+        for (auto& enemy : mapData.enemies) {
+            if (enemy.initialRoom == currentRoom.id && !enemy.isKilled && randomNum <= enemy.aggressiveness) {
+                cout << "The enemy attacks!" << endl;
+                cout << "The " << enemy.id << " attacks you as you try to leave the room and you die." << endl;
+                cout << "Game over!" << endl;
+                exit(0);  // Exit the program
+            }
+        }
     } else {
-        cout << "There is no use for the key here." << endl;
+ //       cout << "Command is not an attempt to exit the current room." << endl;
     }
 }
+// Inside your Game class or a relevant place
+
+// Function to simulate enemy movement
+void Game::simulateEnemyMovement() {
+    for (auto& enemy : mapData.enemies) {
+        if (!enemy.isKilled) {
+            // Generate a random number between 0 and 99
+            int randomNum = rand() % 100;
+
+            cout << "Chance of " << enemy.id << " moving: " << randomNum << "%" << endl;
+            
+            if (randomNum < 50) {
+                // Move the enemy to a random adjacent room
+                moveEnemyToRandomRoom(enemy);
+            }
+        }
+    }
+}
+
+
+
+// Function to move an enemy to a random adjacent room
+void Game::moveEnemyToRandomRoom(Enemy& enemy) {
+    auto exitIter = currentRoom.exits.begin();
+    std::advance(exitIter, rand() % currentRoom.exits.size());
+
+    // Update the enemy's initialRoom
+    enemy.initialRoom = exitIter->second;
+
+    // Optionally, you can print a message to inform the player about the enemy's movement
+    cout << "Watch out! The " << enemy.id << " has moved to a different room." << endl;
+}
+
+void Game::handleEnemyActions(const string& command) {
+    handleEnemyAttack(command);
+    simulateEnemyMovement();  // Simulate enemy movement when the player takes an action
+}
+
+
+
+
+
+
 MapData Game::loadMapData(const string& mapFileName) {
     ifstream file(mapFileName);
 
@@ -283,14 +365,10 @@ MapData Game::loadMapData(const string& mapFileName) {
 
     return mapData;
 }
-void Game::printHiddenRoomDescription() {
-    cout << "You found a hidden room! There is an exit to the right." << endl;
-}
+
 void Game::printRoomDescription(const Room& room) {
     cout << room.desc << endl;
-    if(room.id == "room1" && !keyPicked){
-        cout<<"Interesting. Is that a key? That can be used for secret exits. Keep this safe!"<<endl;
-    }
+
 //objects
     for (const auto& object : mapData.objects) {
         if (object.initialRoom == room.id) {
@@ -303,9 +381,6 @@ void Game::printRoomDescription(const Room& room) {
         if (enemy.initialRoom == room.id) {
             printEnemyDescription(enemy);
         }
-    }
-        if (room.id =="room2" && hiddenRoomFound){
-        printHiddenRoomDescription();
     }
 }
 
@@ -324,11 +399,11 @@ bool Game::isObjectiveComplete() {
             auto killedEnemy = find_if(
                 mapData.enemies.begin(), mapData.enemies.end(),
                 [&enemyId](const Enemy& enemy) {
-                    return enemy.id == enemyId && enemy.isKilled;
+                    return enemy.id == enemyId && !enemy.isKilled;
                 });
 
-            if (killedEnemy == mapData.enemies.end()) {
-                return false; // Objective not complete
+            if (killedEnemy != mapData.enemies.end()) {
+                return false; // Objective not complete, at least one enemy is not killed
             }
         }
         return true; // All specified enemies are killed
@@ -336,9 +411,9 @@ bool Game::isObjectiveComplete() {
         // Check if all specified objects are collected
         for (const auto& objectId : mapData.objective.what) {
             auto collectedObject = find(
-                collectedGems.begin(), collectedGems.end(), objectId);
+                mapData.player.inventory.begin(), mapData.player.inventory.end(), objectId);
 
-            if (collectedObject == collectedGems.end()) {
+            if (collectedObject == mapData.player.inventory.end()) {
                 return false; // Objective not complete
             }
         }
@@ -351,3 +426,4 @@ bool Game::isObjectiveComplete() {
         return false; // Placeholder
     }
 }
+
