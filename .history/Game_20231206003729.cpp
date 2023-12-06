@@ -44,7 +44,7 @@ void Game::displayInventory() const {
         // Display the contents of the player's inventory
         std::cout << "Inventory: ";
         for (const auto& item : mapData.player.inventory) {
-            std::cout << "'"<< item << "' ";
+            std::cout << item << ", ";
         }
         std::cout << std::endl;
     }
