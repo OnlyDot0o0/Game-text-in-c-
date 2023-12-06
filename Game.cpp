@@ -7,20 +7,27 @@ using namespace std;
 
 using json = nlohmann::json;
 
+const string Game:: key_Id = "key";
+// Game class constructor
 Game::Game(const string& mapFileName) {
+    // Load map data from the file
     mapData = loadMapData(mapFileName);
+    // Set the current room to the first room in the map
     currentRoom = mapData.rooms.front(); 
+    keyPicked = false;
 }
 
 void Game::startGame() {
+    // Initialize the game with the player's starting room.
     printRoomDescription(currentRoom);
 }
 
 void Game::processCommand(const string& command) {
-    // Convert the command to lowercase for case-insensitivity
+    // Convert to lowercase
     string lowercaseCommand = command;
     transform(lowercaseCommand.begin(), lowercaseCommand.end(), lowercaseCommand.begin(), ::tolower);
 
+    // Process commands
     if (lowercaseCommand.find("look around") != string::npos) {
         lookAround();
     } else if (lowercaseCommand.substr(0, 2) == "go") {
@@ -32,21 +39,24 @@ void Game::processCommand(const string& command) {
     } else if (lowercaseCommand.find("kill") != string::npos) {
         string enemyId = lowercaseCommand.substr(5); 
         kill(enemyId);
-    } else {
+    } else if (lowercaseCommand == "use key"){
+        useKey();
+    }
+    else {
         cout << "Invalid command. Type 'look around', 'go xxx', 'pick xxx', or 'kill xxx', or 'quit' or 'inventory'" << endl;
     }
 }
 void Game::displayInventory() const {
     // Check if the player's inventory is empty
     if (mapData.player.inventory.empty()) {
-        std::cout << "Your inventory is empty." << std::endl;
+        cout << "Your inventory is empty." << endl;
     } else {
         // Display the contents of the player's inventory
-        std::cout << "Inventory: ";
+        cout << "Inventory: ";
         for (const auto& item : mapData.player.inventory) {
-            std::cout << "'"<< item << "' ";
+            cout << item << " ";
         }
-        std::cout << std::endl;
+        cout << endl;
     }
 }
 
@@ -76,6 +86,11 @@ void Game::pick(const string& objectId) {
 
                 // Set the isPickedUp flag to true
                 objectToPick->isPickedUp = true;
+                if(objectId == key_Id && !keyPicked){
+                    keyPicked=true;
+                    mapData.player.inventory.push_back(objectId);
+                    cout<<"You picked up the "<< objectId << endl;
+                }
             }
         } else {
             // Error: The specified object is not in this room
@@ -193,6 +208,14 @@ void Game::go(const string& direction) {
         cout << "Error: Invalid direction." << endl;
     }
 }
+void Game::useKey() {
+    if (currentRoom.id == "room2" && keyPicked && !hiddenRoomFound) {
+        hiddenRoomFound = true;
+        cout << "You found the hidden door. There is an exit to the right." << endl;
+    } else {
+        cout << "There is no use for the key here." << endl;
+    }
+}
 MapData Game::loadMapData(const string& mapFileName) {
     ifstream file(mapFileName);
 
@@ -260,10 +283,14 @@ MapData Game::loadMapData(const string& mapFileName) {
 
     return mapData;
 }
-
+void Game::printHiddenRoomDescription() {
+    cout << "You found a hidden room! There is an exit to the right." << endl;
+}
 void Game::printRoomDescription(const Room& room) {
     cout << room.desc << endl;
-
+    if(room.id == "room1" && !keyPicked){
+        cout<<"Interesting. Is that a key? That can be used for secret exits. Keep this safe!"<<endl;
+    }
 //objects
     for (const auto& object : mapData.objects) {
         if (object.initialRoom == room.id) {
@@ -276,6 +303,9 @@ void Game::printRoomDescription(const Room& room) {
         if (enemy.initialRoom == room.id) {
             printEnemyDescription(enemy);
         }
+    }
+        if (room.id =="room2" && hiddenRoomFound){
+        printHiddenRoomDescription();
     }
 }
 
@@ -321,4 +351,3 @@ bool Game::isObjectiveComplete() {
         return false; // Placeholder
     }
 }
-
