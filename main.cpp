@@ -57,7 +57,7 @@ void runGameLoop(Game& game) {
             game.displayInventory();
         } else {
             game.processCommand(userInput);
-            game.simulateEnemyMovement();
+            // game.simulateEnemyMovement();
         }
         if (game.isObjectiveComplete()) {
             cout << "Congratulations! You have completed the objective. You win!" << endl;
