@@ -22,7 +22,7 @@ string initializeGame(int argc, char* argv[]) {
 void runGameLoop(Game& game) {
     string userInput;
     while (true) {
-        cout << "Enter a command: ";
+        cout << "\nEnter a command: ";
         getline(cin, userInput);
 
         if (userInput == "quit") {
@@ -57,14 +57,14 @@ void runGameLoop(Game& game) {
             game.displayInventory();
         } else {
             game.processCommand(userInput);
+            game.simulateEnemyMovement();
         }
-    
-       if (game.isObjectiveComplete()) {
+        if (game.isObjectiveComplete()) {
             cout << "Congratulations! You have completed the objective. You win!" << endl;
-            break; 
-        
-       }
-    }
+            break;
+        }
+
+            }
 
 }
 
