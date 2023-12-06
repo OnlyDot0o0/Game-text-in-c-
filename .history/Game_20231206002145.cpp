@@ -125,10 +125,12 @@ void Game::removeObjectFromRoom(const string& objectId, const string& roomId) {
 }
 
 void Game::kill(const string& enemyId) {
+    // List of items that should not be removed from the inventory after use
     vector<string> nonExhaustibleItems = {"gun"};
+
     auto enemyIter = find_if(
         mapData.enemies.begin(), mapData.enemies.end(),
-        [&enemyId](const Enemy& enemy) {
+        &enemyId {
             return enemy.id == enemyId && !enemy.isKilled;
         });
 
@@ -171,6 +173,7 @@ void Game::kill(const string& enemyId) {
         cerr << "Error: Enemy not found or already killed." << endl;
     }
 }
+
 
 void Game::lookAround() {
     printRoomDescription(currentRoom);

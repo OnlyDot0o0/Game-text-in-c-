@@ -152,12 +152,9 @@ void Game::kill(const string& enemyId) {
 
             // Remove required items from the player's inventory
             for (const auto& item : enemyIter->killedBy) {
-                // Only remove the item if it's not in the nonExhaustibleItems list
-                if (find(nonExhaustibleItems.begin(), nonExhaustibleItems.end(), item) == nonExhaustibleItems.end()) {
-                    auto itemIter = find(mapData.player.inventory.begin(), mapData.player.inventory.end(), item);
-                    if (itemIter != mapData.player.inventory.end()) {
-                        mapData.player.inventory.erase(itemIter);
-                    }
+                auto itemIter = find(mapData.player.inventory.begin(), mapData.player.inventory.end(), item);
+                if (itemIter != mapData.player.inventory.end()) {
+                    mapData.player.inventory.erase(itemIter);
                 }
             }
         } else {
