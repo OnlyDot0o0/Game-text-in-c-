@@ -6,7 +6,6 @@
 #include <vector>
 using namespace std;
 #include <unordered_map>
-#include <set>
 
 
 
@@ -22,10 +21,10 @@ public:
     string id;
     string desc;
     string initialRoom;
-    bool isPickedUp; // track whether the object is picked up.
+    bool isPickedUp; //track whether the object is picked up.
+
     Object() : isPickedUp(false) {}
 };
-
 
 
 class Enemy {
@@ -36,6 +35,7 @@ public:
     string initialRoom;
     vector<string> killedBy;
     bool isKilled;
+    string currentRoom;
     Enemy(): isKilled(false){}
 };
 
@@ -43,6 +43,7 @@ class Player {
 public:
     string initialRoom;
     vector<string> inventory;
+    bool hasObject(const string& objectId) const;
 };
 
 class Objective {
@@ -71,25 +72,22 @@ public:
     void go(const string& direction);
     void pick(const string& objectId);
     void kill (const string& enemyId);
+    bool hasRequiredItems(const Enemy& enemy);
+    void handleEnemyAttack(const string& command);
+    void removeEnemy(const string& enemyId);
     bool isObjectInCurrentRoom(const string& objectId) const;
     void removeObjectFromRoom(const string& objectId, const string& roomId);
-    bool enemyDefeated(const string &enemyId);
     MapData loadMapData(const string& mapFileName);
     void printRoomDescription(const Room& room);
     void printObjectDescription(const Object& object);
     void printEnemyDescription(const Enemy& enemy);
     void displayInventory() const;
-    void printHiddenRoomDescription();
-    set<string> usedItems;
-    void use(const string& objectId);
+    void handleEnemyActions(const string& command);
+    void moveEnemyToRandomRoom(Enemy& enemy);
+    void simulateEnemyMovement();
     MapData mapData;
     Room currentRoom;
     vector<string> collectedGems;
-    bool hiddenRoomFound;
-    const string hiddenRoomID = "hiddenRoom";
-    bool keyPicked;
-    static const string key_Id;
-    void useKey();
 };
 
 #endif // GAME_H
