@@ -288,10 +288,10 @@ void Game::moveEnemyToRandomRoom(Enemy& enemy) {
     cout << "Watch out! The " << enemy.id << " has moved to a different room." << endl;
 }
 
-void Game::handleEnemyActions(const string& command) {
-    handleEnemyAttack(command);
-    simulateEnemyMovement();  // Simulate enemy movement when the player takes an action
-}
+// void Game::handleEnemyActions(const string& command) {
+//     handleEnemyAttack(command);
+//     simulateEnemyMovement();  // Simulate enemy movement when the player takes an action
+// }
 
 
 
