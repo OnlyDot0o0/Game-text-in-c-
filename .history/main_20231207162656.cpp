@@ -18,13 +18,11 @@ string initializeGame(int argc, char* argv[]) {
     return mapFileName;
 }
 
-//Function to loop through the gmae and user inputs
 void runGameLoop(Game& game) {
     string userInput;
     while (true) {
         cout << "\nEnter a command: ";
         getline(cin, userInput);
-        cout << endl;
 
         if (userInput == "quit") {
             break;

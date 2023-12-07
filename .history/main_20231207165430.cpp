@@ -24,7 +24,6 @@ void runGameLoop(Game& game) {
     while (true) {
         cout << "\nEnter a command: ";
         getline(cin, userInput);
-        cout << endl;
 
         if (userInput == "quit") {
             break;
@@ -66,6 +65,7 @@ void runGameLoop(Game& game) {
         } else {
             game.processCommand(userInput);
         }
+        cout << endl;
         if (game.isObjectiveComplete()) {
             cout << "Congratulations! You have completed the objective. You win!" << endl;
             break;

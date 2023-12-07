@@ -24,7 +24,6 @@ void runGameLoop(Game& game) {
     while (true) {
         cout << "\nEnter a command: ";
         getline(cin, userInput);
-        cout << endl;
 
         if (userInput == "quit") {
             break;

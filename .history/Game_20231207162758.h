@@ -21,7 +21,8 @@ public:
     string id;
     string desc;
     string initialRoom;
-    bool isPickedUp; 
+    bool isPickedUp; //track whether the object is picked up.
+
     Object() : isPickedUp(false) {}
 };
 
@@ -54,6 +55,7 @@ public:
 
 class MapData {
 public:
+    //MapType mapType;  
     vector<Room> rooms;
     vector<Object> objects;
     vector<Enemy> enemies;
@@ -66,29 +68,25 @@ public:
     Game(const string& mapFileName);
     void startGame();
     void processCommand(const string& command);
-
     void lookAround();
+    bool isObjectiveComplete();
     void go(const string& direction);
     void pick(const string& objectId);
     void kill (const string& enemyId);
     void eat(const string& objectId);
-
-    bool isObjectiveComplete();
     bool hasRequiredItems(const Enemy& enemy);
     void handleEnemyAttack(const string& command);
     void removeEnemy(const string& enemyId);
     bool isObjectInCurrentRoom(const string& objectId) const;
     void removeObjectFromRoom(const string& objectId, const string& roomId);
-
-
+    MapData loadMapData(const string& mapFileName);
     void printRoomDescription(const Room& room);
     void printObjectDescription(const Object& object);
     void printEnemyDescription(const Enemy& enemy);
     void displayInventory() const;
+    // void handleEnemyActions(const string& command);
     void moveEnemyToRandomRoom(Enemy& enemy);
     void simulateEnemyMovement();
-
-    MapData loadMapData(const string& mapFileName);
     MapData mapData;
     Room currentRoom;
     vector<string> collectedGems;
