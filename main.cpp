@@ -4,13 +4,17 @@
 using namespace std;
 
 // Function to initialize the game
-string initializeGame(int argc, char* argv[]) {
+string initializeGame(int argc, char *argv[])
+{
     string mapFileName;
 
     // Check if a map name was provided
-    if (argc > 1) {
+    if (argc > 1)
+    {
         mapFileName = argv[1];
-    } else {
+    }
+    else
+    {
         cerr << "Error: No map name provided. Please run the program with a map name, like this: './main MapName'" << endl;
         exit(1);
     }
@@ -18,64 +22,94 @@ string initializeGame(int argc, char* argv[]) {
     return mapFileName;
 }
 
-//Function to loop through the gmae and user inputs
-void runGameLoop(Game& game) {
+// Function to loop through the gmae and user inputs
+void runGameLoop(Game &game)
+{
     string userInput;
-    while (true) {
+    while (true)
+    {
         cout << "\nEnter a command: ";
         getline(cin, userInput);
         cout << endl;
 
-        if (userInput == "quit") {
+        if (userInput == "quit")
+        {
             break;
         }
 
         // Convert the user input to lowercase for case-insensitivity
         transform(userInput.begin(), userInput.end(), userInput.begin(), ::tolower);
 
-        if (userInput.substr(0, 2) == "go") {
-            if (userInput.length() > 3) {
+        if (userInput.substr(0, 2) == "go")
+        {
+            if (userInput.length() > 3)
+            {
                 string direction = userInput.substr(3);
                 game.go(direction);
-            } else {
+            }
+            else
+            {
                 cout << "You need to specify a direction to go." << endl;
             }
-        } else if (userInput.find("take") != string::npos) {
-            if (userInput.length() > 5){
-                string objectId = userInput.substr(5); 
+        }
+        else if (userInput.find("take") != string::npos)
+        {
+            if (userInput.length() > 5)
+            {
+                string objectId = userInput.substr(5);
                 game.pick(objectId);
-            } else {
+            }
+            else
+            {
                 cout << "You need to specify an item id to pick up." << endl;
             }
-        } else if (userInput.find("kill") != string::npos) {
-            if (userInput.length() > 5){
-                string enemyId = userInput.substr(5); 
+        }
+        else if (userInput.find("kill") != string::npos)
+        {
+            if (userInput.length() > 5)
+            {
+                string enemyId = userInput.substr(5);
                 game.kill(enemyId);
-            } else {
+            }
+            else
+            {
                 cout << "You need to specify an enemy id to kill." << endl;
             }
-        } else if (userInput.find("list items") != string::npos){
+        }
+        else if (userInput.find("list items") != string::npos)
+        {
             game.displayInventory();
-        } else if(userInput.find("eat") != string::npos) {
-            if (userInput.length() > 4){
-                string food = userInput.substr(4); 
+        }
+        else if (userInput.find("eat") != string::npos)
+        {
+            if (userInput.length() > 4)
+            {
+                string food = userInput.substr(4);
                 game.eat(food);
-            } else {
+            }
+            else
+            {
                 cout << "You need to specify what you want to eat." << endl;
             }
-        } else {
+        }
+        else if (userInput == "look")
+        {
+            game.lookAround();
+        }
+        else
+        {
             game.processCommand(userInput);
         }
-        if (game.isObjectiveComplete()) {
+        if (game.isObjectiveComplete())
+        {
             cout << "Congratulations! You have completed the objective. You win!" << endl;
             break;
         }
-
     }
-
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[])
+{
     string mapFileName = initializeGame(argc, argv);
 
     Game game(mapFileName);
