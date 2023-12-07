@@ -254,7 +254,7 @@ void Game::handleEnemyAttack(const string& command) {
                     cout << "The " << enemy.id << " attacks you and you die." << endl;
                     cout << "Game over!" << endl;
                     exit(0);  // Exit the program
-            }   }
+                }
         }
     }
 }

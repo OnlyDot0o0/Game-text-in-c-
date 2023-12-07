@@ -59,7 +59,7 @@ void runGameLoop(Game& game) {
                 string food = userInput.substr(4); 
                 game.eat(food);
             } else {
-                cout << "You need to specify what you want to eat." << endl;
+                cout << "You need to specify an enemy id to kill." << endl;
             }
         } else {
             game.processCommand(userInput);

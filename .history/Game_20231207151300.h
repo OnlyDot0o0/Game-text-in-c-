@@ -44,7 +44,8 @@ public:
     string initialRoom;
     vector<string> inventory;
     int lives; // Add this line
-    Player() : lives(1) {}; // Initialize lives to 1 in the constructor
+    Player() : lives(1) {} // Initialize lives to 1 in the constructor
+    bool hasObject(const string& objectId) const;
 };
 
 class Objective {
@@ -73,7 +74,6 @@ public:
     void go(const string& direction);
     void pick(const string& objectId);
     void kill (const string& enemyId);
-    void eat(const string& objectId);
     bool hasRequiredItems(const Enemy& enemy);
     void handleEnemyAttack(const string& command);
     void removeEnemy(const string& enemyId);

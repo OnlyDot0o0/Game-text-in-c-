@@ -137,20 +137,15 @@ void Game::kill(const string& enemyId) {
     vector<string> nonExhaustibleItems = {"gun"};
     auto enemyIter = find_if(
         mapData.enemies.begin(), mapData.enemies.end(),
-        [&enemyId](const Enemy& enemy) {
+        &enemyId {
             return enemy.id == enemyId && !enemy.isKilled;
         });
 
     if (enemyIter != mapData.enemies.end()) {
-        // Check if the player has the required items
         if (hasRequiredItems(*enemyIter)) {
-            // Mark the enemy as killed
             enemyIter->isKilled = true;
             cout << "You killed the " << enemyId << "." << endl;
-
-            // Remove required items from the player's inventory
             for (const auto& item : enemyIter->killedBy) {
-                // Only remove the item if it's not in the nonExhaustibleItems list
                 if (find(nonExhaustibleItems.begin(), nonExhaustibleItems.end(), item) == nonExhaustibleItems.end()) {
                     auto itemIter = find(mapData.player.inventory.begin(), mapData.player.inventory.end(), item);
                     if (itemIter != mapData.player.inventory.end()) {
@@ -158,15 +153,13 @@ void Game::kill(const string& enemyId) {
                     }
                 }
             }
-
             removeEnemy(enemyId);
         } else {
             cout << "You don't have the required items to kill the " << enemyId << "!" << endl;
             // Check if the player has an extra life
             if (mapData.player.lives > 1) {
                 mapData.player.lives--;
-                cout << "The " << enemyId << " attacks you and you die." << endl;
-                cout << "You lost a live, but you are back because you ate the apple!" << endl;
+                cout << "You lose a life, but you're still alive!" << endl;
             } else {
                 cout << "The " << enemyId << " attacks you and you die." << endl;
                 cout << "Game over!" << endl;
@@ -177,6 +170,7 @@ void Game::kill(const string& enemyId) {
         cerr << "Error: Enemy not found or already killed." << endl;
     }
 }
+
 bool Game::hasRequiredItems(const Enemy& enemy) {
     vector<string> missingItems;  // Keep track of missing items for later print
 
@@ -245,16 +239,17 @@ void Game::handleEnemyAttack(const string& command) {
         int randomNum = rand() % 101;
         for (auto& enemy : mapData.enemies) {
             if (enemy.initialRoom == currentRoom.id && !enemy.isKilled && randomNum <= enemy.aggressiveness) {
+                cout << "The enemy attacks!" << endl;
                 // Check if the player has an extra life
                 if (mapData.player.lives > 1) {
                     mapData.player.lives--;
-                    cout << "The " << enemy.id << " attacks you and you die." << endl;
-                    cout << "You lost a live, but you are back because you ate the apple!" << endl;
+                    cout << "You lose a life, but you're still alive!" << endl;
                 } else {
-                    cout << "The " << enemy.id << " attacks you and you die." << endl;
+                    cout << "The " << enemy.id << " attacks you as you try to leave the room and you die." << endl;
                     cout << "Game over!" << endl;
                     exit(0);  // Exit the program
-            }   }
+                }
+            }
         }
     }
 }

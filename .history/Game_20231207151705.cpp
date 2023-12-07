@@ -36,7 +36,7 @@ void Game::processCommand(const string& command) {
         string enemyId = lowercaseCommand.substr(5); 
         kill(enemyId);
     } else if (lowercaseCommand.find("kill") != string::npos){
-        eat(lowercaseCommand.substr(4));
+        eat(command.substr(4));
     } else {
         cout << "Invalid command. Type 'look around', 'go xxx', 'take xxx', or 'kill xxx', or 'quit' or 'list items'" << endl;
     }
@@ -162,16 +162,9 @@ void Game::kill(const string& enemyId) {
             removeEnemy(enemyId);
         } else {
             cout << "You don't have the required items to kill the " << enemyId << "!" << endl;
-            // Check if the player has an extra life
-            if (mapData.player.lives > 1) {
-                mapData.player.lives--;
-                cout << "The " << enemyId << " attacks you and you die." << endl;
-                cout << "You lost a live, but you are back because you ate the apple!" << endl;
-            } else {
-                cout << "The " << enemyId << " attacks you and you die." << endl;
-                cout << "Game over!" << endl;
-                exit(0);  // Exit the program
-            }
+            cout << "The " << enemyId << " attacks you and you die." << endl;
+            cout << "Game over!" << endl;
+            exit(0);  // Exit the program
         }
     } else {
         cerr << "Error: Enemy not found or already killed." << endl;
@@ -240,25 +233,30 @@ void Game::go(const string& direction) {
 }
 
 void Game::handleEnemyAttack(const string& command) {
+ //   cout << "Command received: " << command << endl;
+
+    // Check if the command is an attempt to exit the current room
     auto exitIter = currentRoom.exits.find(command);
     if (exitIter != currentRoom.exits.end()) {
+ //       cout << "Command is an attempt to exit the current room." << endl;
+
+        // Generate a random number between 0 and 100
         int randomNum = rand() % 101;
+//        cout << "Random number generated: " << randomNum << endl;
+
+        // If the random number is less than or equal to the enemy's aggressiveness, the enemy attacks
         for (auto& enemy : mapData.enemies) {
             if (enemy.initialRoom == currentRoom.id && !enemy.isKilled && randomNum <= enemy.aggressiveness) {
-                // Check if the player has an extra life
-                if (mapData.player.lives > 1) {
-                    mapData.player.lives--;
-                    cout << "The " << enemy.id << " attacks you and you die." << endl;
-                    cout << "You lost a live, but you are back because you ate the apple!" << endl;
-                } else {
-                    cout << "The " << enemy.id << " attacks you and you die." << endl;
-                    cout << "Game over!" << endl;
-                    exit(0);  // Exit the program
-            }   }
+                cout << "The enemy attacks!" << endl;
+                cout << "The " << enemy.id << " attacks you as you try to leave the room and you die." << endl;
+                cout << "Game over!" << endl;
+                exit(0);  // Exit the program
+            }
         }
+    } else {
+ //       cout << "Command is not an attempt to exit the current room." << endl;
     }
 }
-
 // Inside your Game class or a relevant place
 
 // Function to simulate enemy movement
@@ -298,13 +296,10 @@ void Game::moveEnemyToRandomRoom(Enemy& enemy) {
 // }
 
 void Game::eat(const string& objectId) {
-    // Search for the apple in the player's inventory
-    auto it = find(mapData.player.inventory.begin(), mapData.player.inventory.end(), objectId);
-
-    // Check if the apple was found
-    if (it != mapData.player.inventory.end()) {
+    // Check if the player has the apple in their inventory
+    if (mapData.player.hasObject(objectId)) {
         // Remove the apple from the player's inventory
-        mapData.player.inventory.erase(it);
+        mapData.player.inventory.erase(remove(mapData.player.inventory.begin(), mapData.player.inventory.end(), objectId), mapData.player.inventory.end());
         
         // Increase the player's lives by 1
         mapData.player.lives++;
@@ -314,6 +309,11 @@ void Game::eat(const string& objectId) {
         cout << "You don't have an apple in your inventory." << endl;
     }
 }
+
+
+
+
+
 
 MapData Game::loadMapData(const string& mapFileName) {
     ifstream file(mapFileName);

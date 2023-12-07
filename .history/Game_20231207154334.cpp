@@ -245,16 +245,17 @@ void Game::handleEnemyAttack(const string& command) {
         int randomNum = rand() % 101;
         for (auto& enemy : mapData.enemies) {
             if (enemy.initialRoom == currentRoom.id && !enemy.isKilled && randomNum <= enemy.aggressiveness) {
+                cout << "The enemy attacks!" << endl;
                 // Check if the player has an extra life
                 if (mapData.player.lives > 1) {
                     mapData.player.lives--;
-                    cout << "The " << enemy.id << " attacks you and you die." << endl;
-                    cout << "You lost a live, but you are back because you ate the apple!" << endl;
+                    cout << "You lose a life, but you're still alive!" << endl;
                 } else {
-                    cout << "The " << enemy.id << " attacks you and you die." << endl;
+                    cout << "The " << enemy.id << " attacks you as you try to leave the room and you die." << endl;
                     cout << "Game over!" << endl;
                     exit(0);  // Exit the program
-            }   }
+                }
+            }
         }
     }
 }

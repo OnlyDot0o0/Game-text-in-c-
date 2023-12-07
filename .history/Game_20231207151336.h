@@ -44,7 +44,8 @@ public:
     string initialRoom;
     vector<string> inventory;
     int lives; // Add this line
-    Player() : lives(1) {}; // Initialize lives to 1 in the constructor
+    Player() : lives(1) {} // Initialize lives to 1 in the constructor
+    bool hasObject(const string& objectId) const;
 };
 
 class Objective {
