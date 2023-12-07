@@ -38,7 +38,7 @@ void runGameLoop(Game& game) {
             } else {
                 cout << "You need to specify a direction to go." << endl;
             }
-        } else if (userInput.find("take") != string::npos) {
+        } else if (userInput.find("pick") != string::npos) {
             if (userInput.length() > 5){
                 string objectId = userInput.substr(5); 
                 game.pick(objectId);
@@ -52,7 +52,7 @@ void runGameLoop(Game& game) {
             } else {
                 cout << "You need to specify an enemy id to kill." << endl;
             }
-        } else if (userInput.find("list items") != string::npos){
+        } else if (userInput.find("inventory") != string::npos){
             game.displayInventory();
         } else {
             game.processCommand(userInput);
