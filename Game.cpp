@@ -35,8 +35,6 @@ void Game::processCommand(const string& command) {
     } else if (lowercaseCommand.find("kill") != string::npos) {
         string enemyId = lowercaseCommand.substr(5); 
         kill(enemyId);
-    } else if (lowercaseCommand.find("kill") != string::npos){
-        eat(lowercaseCommand.substr(4));
     } else {
         cout << "Invalid command. Type 'look around', 'go xxx', 'take xxx', or 'kill xxx', or 'quit' or 'list items'" << endl;
     }
@@ -47,7 +45,7 @@ void Game::displayInventory() const {
         std::cout << "Your inventory is empty." << std::endl;
     } else {
         // Display the contents of the player's inventory
-        std::cout << "Inventory: ";
+        std::cout << "Inventory ";
         for (const auto& item : mapData.player.inventory) {
             std::cout << "'"<< item << "' ";
         }
@@ -135,18 +133,31 @@ void Game::removeObjectFromRoom(const string& objectId, const string& roomId) {
 
 void Game::kill(const string& enemyId) {
     vector<string> nonExhaustibleItems = {"gun"};
-    auto enemyIter = find_if(
-        mapData.enemies.begin(), mapData.enemies.end(),
-        [&enemyId](const Enemy& enemy) {
-            return enemy.id == enemyId && !enemy.isKilled;
-        });
+    string lowercaseEnemyId = enemyId;
+    transform(lowercaseEnemyId.begin(), lowercaseEnemyId.end(), lowercaseEnemyId.begin(), ::tolower);
 
-    if (enemyIter != mapData.enemies.end()) {
-        // Check if the player has the required items
+    // Find the enemy with the exact ID
+auto enemyIter = find_if(
+    mapData.enemies.begin(), mapData.enemies.end(),
+    [&lowercaseEnemyId](const Enemy& enemy) {
+        string lowercaseId = enemy.id;
+        transform(lowercaseId.begin(), lowercaseId.end(), lowercaseId.begin(), ::tolower);
+        return lowercaseId == lowercaseEnemyId;
+    });
+
+
+
+
+    if (enemyIter != mapData.enemies.end()  && !enemyIter->isKilled) {
+        //cout << "Enemy found: " << enemyIter->id << endl;
         if (hasRequiredItems(*enemyIter)) {
             // Mark the enemy as killed
             enemyIter->isKilled = true;
-            cout << "You killed the " << enemyId << "." << endl;
+            if (!enemyIter->successful_kill_msg.empty()) {
+                cout << enemyIter->successful_kill_msg << endl;
+            } else {
+                cout << "You killed the " << enemyId << "." << endl;
+            }
 
             // Remove required items from the player's inventory
             for (const auto& item : enemyIter->killedBy) {
@@ -161,20 +172,101 @@ void Game::kill(const string& enemyId) {
 
             removeEnemy(enemyId);
         } else {
+            if (!enemyIter->successful_kill_msg.empty()) {
+                cout << enemyIter->unsuccessful_kill_msg << endl;
+                cout<<"Game Over"<<endl;
+                exit(0);
+            } else{        
+            
             cout << "You don't have the required items to kill the " << enemyId << "!" << endl;
             // Check if the player has an extra life
             if (mapData.player.lives > 1) {
                 mapData.player.lives--;
                 cout << "The " << enemyId << " attacks you and you die." << endl;
                 cout << "You lost a live, but you are back because you ate the apple!" << endl;
-            } else {
-                cout << "The " << enemyId << " attacks you and you die." << endl;
-                cout << "Game over!" << endl;
-                exit(0);  // Exit the program
+            }else{
+            cout << "The " << enemyId << " attacks you and you die." << endl;
+            cout << "Game over!" << endl;
+            exit(0);  // Exit the program
             }
+        }
         }
     } else {
         cerr << "Error: Enemy not found or already killed." << endl;
+    }
+}
+
+// void Game::kill(const string& enemyId) {
+//     vector<string> nonExhaustibleItems = {"gun"};
+//     string lowercaseEnemyId = enemyId;
+//     transform(lowercaseEnemyId.begin(), lowercaseEnemyId.end(), lowercaseEnemyId.begin(), ::tolower);
+
+//     auto enemyIter = find_if(
+//         mapData.enemies.begin(), mapData.enemies.end(),
+//         [&lowercaseEnemyId](const Enemy& enemy) {
+//             string lowercaseId = enemy.id;
+//             transform(lowercaseId.begin(), lowercaseId.end(), lowercaseId.begin(), ::tolower);
+
+//             // Check if the lowercaseEnemyId is a substring of lowercaseId
+//             return lowercaseId.find(lowercaseEnemyId) != string::npos && !enemy.isKilled;
+//         });
+
+//     if (enemyIter != mapData.enemies.end()) {
+//         // Check if the player has the required items
+//         if (hasRequiredItems(*enemyIter)) {
+//             // Mark the enemy as killed
+//             enemyIter->isKilled = true;
+//             if (!enemyIter->successful_kill_msg.empty()) {
+//                 cout << enemyIter->successful_kill_msg << endl;
+//             } else {
+//                 cout << "You killed the " << enemyId << "." << endl;
+//             }
+
+//             // Remove required items from the player's inventory
+//             for (const auto& item : enemyIter->killedBy) {
+//                 // Only remove the item if it's not in the nonExhaustibleItems list
+//                 if (find(nonExhaustibleItems.begin(), nonExhaustibleItems.end(), item) == nonExhaustibleItems.end()) {
+//                     auto itemIter = find(mapData.player.inventory.begin(), mapData.player.inventory.end(), item);
+//                     if (itemIter != mapData.player.inventory.end()) {
+//                         mapData.player.inventory.erase(itemIter);
+//                     }
+//                 }
+//             }
+
+//             removeEnemy(enemyId);
+//         } else {
+//             if (!enemyIter->unsuccessful_kill_msg.empty()) {
+//                 cout << enemyIter->unsuccessful_kill_msg << endl;
+//                 cout << "Game Over" << endl;
+//                 exit(0);
+//             } else {
+//                 // Inside kill function
+//                 cout << "You don't have the required items to kill the " << enemyId << "!" << endl;
+//                 cout << "The " << enemyId << " attacks you and you die." << endl;
+//                 cout << "Game over!" << endl;
+//                 exit(0);  // Exit the program
+//             }
+//         }
+//     } else {
+//         cerr << "Error: Enemy not found or already killed." << endl;
+//     }
+// }
+
+void Game::eat(const string& objectId) {
+    // Search for the apple in the player's inventory
+    auto it = find(mapData.player.inventory.begin(), mapData.player.inventory.end(), objectId);
+
+    // Check if the apple was found
+    if (it != mapData.player.inventory.end()) {
+        // Remove the apple from the player's inventory
+        mapData.player.inventory.erase(it);
+        
+        // Increase the player's lives by 1
+        mapData.player.lives++;
+        
+        cout << "You ate the apple and gained an extra life!" << endl;
+    } else {
+        cout << "You don't have an apple in your inventory." << endl;
     }
 }
 bool Game::hasRequiredItems(const Enemy& enemy) {
@@ -240,80 +332,81 @@ void Game::go(const string& direction) {
 }
 
 void Game::handleEnemyAttack(const string& command) {
+    // Check if the command is an attempt to exit the current room
     auto exitIter = currentRoom.exits.find(command);
     if (exitIter != currentRoom.exits.end()) {
+        // Generate a random number between 0 and 100
         int randomNum = rand() % 101;
+
+        // If the random number is less than or equal to the enemy's aggressiveness, the enemy attacks
         for (auto& enemy : mapData.enemies) {
             if (enemy.initialRoom == currentRoom.id && !enemy.isKilled && randomNum <= enemy.aggressiveness) {
-                // Check if the player has an extra life
-                if (mapData.player.lives > 1) {
-                    mapData.player.lives--;
-                    cout << "The " << enemy.id << " attacks you and you die." << endl;
-                    cout << "You lost a live, but you are back because you ate the apple!" << endl;
+                if (!enemy.unsuccessful_escape_msg.empty()) {
+                    cout << enemy.unsuccessful_escape_msg << endl;
+                    cout << "Game Over" << endl;
+                    exit(0);
+                } else {
+                    if (mapData.player.lives > 1) {
+                        mapData.player.lives--;
+                        cout << "The " << enemy.id << " attacks you and you die." << endl;
+                        cout << "You lost a live, but you are back because you ate the apple!" << endl;
                 } else {
                     cout << "The " << enemy.id << " attacks you and you die." << endl;
                     cout << "Game over!" << endl;
                     exit(0);  // Exit the program
             }   }
+                }
+            }
         }
     }
-}
+
 
 // Inside your Game class or a relevant place
 
 // Function to simulate enemy movement
-void Game::simulateEnemyMovement() {
-    for (auto& enemy : mapData.enemies) {
-        if (!enemy.isKilled) {
-            // Generate a random number between 0 and 99
-            int randomNum = rand() % 100;
-
-            cout << "Chance of " << enemy.id << " moving: " << randomNum << "%" << endl;
-            
-            if (randomNum < 50) {
-                // Move the enemy to a random adjacent room
-                moveEnemyToRandomRoom(enemy);
-            }
-        }
-    }
-}
-
-
-
 // Function to move an enemy to a random adjacent room
-void Game::moveEnemyToRandomRoom(Enemy& enemy) {
-    auto exitIter = currentRoom.exits.begin();
-    std::advance(exitIter, rand() % currentRoom.exits.size());
+// void Game::moveEnemyToRandomRoom(Enemy& enemy) {
+//     auto exitIter = currentRoom.exits.begin();
+//     std::advance(exitIter, rand() % currentRoom.exits.size());
 
-    // Update the enemy's initialRoom
-    enemy.initialRoom = exitIter->second;
+//     // Update the enemy's initialRoom
+//     enemy.initialRoom = exitIter->second;
 
-    // Optionally, you can print a message to inform the player about the enemy's movement
-    cout << "Watch out! The " << enemy.id << " has moved to a different room." << endl;
-}
+//     // Optionally, you can print a message to inform the player about the enemy's movement
+//     cout << "Watch out! The " << enemy.id << " has moved to a different room." << endl;
+// }
+
+// // Function to simulate enemy movement
+// // Function to simulate enemy movement
+// void Game::simulateEnemyMovement() {
+//     for (auto& enemy : mapData.enemies) {
+//         if (!enemy.isKilled) {
+//             // Generate a random number between 0 and 99
+//             int randomNum = rand() % 100;
+
+//             // Print the random number (for debugging or information purposes)
+//             cout << "Random number for enemy movement: " << randomNum << endl;
+
+//             // Simulate movement with a chance of 20%
+//             if (randomNum < 20) {
+//                 // Move the enemy to a random adjacent room
+//                 moveEnemyToRandomRoom(enemy);
+//             }
+//         }
+//     }
+// }
+
+
 
 // void Game::handleEnemyActions(const string& command) {
 //     handleEnemyAttack(command);
 //     simulateEnemyMovement();  // Simulate enemy movement when the player takes an action
 // }
 
-void Game::eat(const string& objectId) {
-    // Search for the apple in the player's inventory
-    auto it = find(mapData.player.inventory.begin(), mapData.player.inventory.end(), objectId);
 
-    // Check if the apple was found
-    if (it != mapData.player.inventory.end()) {
-        // Remove the apple from the player's inventory
-        mapData.player.inventory.erase(it);
-        
-        // Increase the player's lives by 1
-        mapData.player.lives++;
-        
-        cout << "You ate the apple and gained an extra life!" << endl;
-    } else {
-        cout << "You don't have an apple in your inventory." << endl;
-    }
-}
+
+
+
 
 MapData Game::loadMapData(const string& mapFileName) {
     ifstream file(mapFileName);
@@ -351,22 +444,37 @@ MapData Game::loadMapData(const string& mapFileName) {
             mapData.objects.push_back(object);
         }
     }
+if (jsonData.contains("enemies") && jsonData["enemies"].is_array()) {
+    for (const auto& enemyJson : jsonData["enemies"]) {
+        Enemy enemy;
+        enemy.id = enemyJson["id"];
+        enemy.desc = enemyJson["desc"];
+        enemy.aggressiveness = enemyJson["aggressiveness"];
+        enemy.initialRoom = enemyJson["initialroom"];
 
-    if (jsonData.contains("enemies") && jsonData["enemies"].is_array()) {
-        for (const auto& enemyJson : jsonData["enemies"]) {
-            Enemy enemy;
-            enemy.id = enemyJson["id"];
-            enemy.desc = enemyJson["desc"];
-            enemy.aggressiveness = enemyJson["aggressiveness"];
-            enemy.initialRoom = enemyJson["initialroom"];
-
-            for (const auto& killedBy : enemyJson["killedby"]) {
-                enemy.killedBy.push_back(killedBy);
-            }
-
-            mapData.enemies.push_back(enemy);
+        // Debug print to check if intro_msg is present
+        if (enemyJson.contains("intro_msg")) {
+            enemy.intro_msg = enemyJson["intro_msg"];
+            //cout << "Intro message loaded for enemy " << enemy.id << ": " << enemy.intro_msg << endl;
         }
+        if (enemyJson.contains("successful_kill_msg")) {
+        enemy.successful_kill_msg = enemyJson["successful_kill_msg"];
+        //cout << "Successful kill message loaded for enemy " << enemy.id << ": " << enemy.successful_kill_msg << endl;
+}
+        if (enemyJson.contains("unsuccessful_kill_msg")) {
+        enemy.unsuccessful_kill_msg = enemyJson["unsuccessful_kill_msg"];
+}
+        if (enemyJson.contains("unsuccessful_escape_msg")) {
+        enemy.unsuccessful_escape_msg = enemyJson["unsuccessful_escape_msg"];
+}
+
+        for (const auto& killedBy : enemyJson["killedby"]) {
+            enemy.killedBy.push_back(killedBy);
+        }
+
+        mapData.enemies.push_back(enemy);
     }
+}
 
     if (jsonData.contains("player") && jsonData["player"].is_object()) {
         mapData.player.initialRoom = jsonData["player"]["initialroom"];
@@ -406,7 +514,12 @@ void Game::printObjectDescription(const Object& object) {
 }
 
 void Game::printEnemyDescription(const Enemy& enemy) {
-    cout << "Oh no.. Thats a " << enemy.id <<". "<<enemy.desc<< "." << endl;
+        if (!enemy.intro_msg.empty()) {
+        cout << enemy.intro_msg << "."<< enemy.desc<< endl;
+    } else {
+        // If no intro message is defined, print the default message
+        cout << "Oh no.. Thats a " << enemy.id << ". " << enemy.desc << "." << endl;
+    }
 }
 
 
@@ -443,3 +556,4 @@ bool Game::isObjectiveComplete() {
         return false; // Placeholder
     }
 }
+
