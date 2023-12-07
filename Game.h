@@ -36,6 +36,11 @@ public:
     bool isKilled;
     string currentRoom;
     Enemy(): isKilled(false){}
+    string intro_msg;
+    string successful_kill_msg;
+    string unsuccessful_kill_msg;
+    string unsuccessful_escape_msg;
+
 };
 
 class Player {
