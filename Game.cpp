@@ -675,7 +675,14 @@ void Game::printEnemyDescription(const Enemy &enemy)
 
 void Game::printEnemyID(const Enemy &enemy)
 {
-    cout << "That is a " << enemy.id << "!" << endl;
+    if (!enemy.intro_msg.empty())
+    {
+        cout << enemy.intro_msg << "." << enemy.desc << endl;
+    }
+    else
+    {
+        cout << "That is a " << enemy.id << "!" << endl;
+    }
 }
 
 bool Game::isObjectiveComplete()
