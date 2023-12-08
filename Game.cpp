@@ -370,9 +370,6 @@ void Game::removeEnemy(const string &enemyId)
             ++it;
         }
     }
-
-    // Error: Specified enemy not found or not killed
-    cerr << "Error: Enemy not found or not killed." << endl;
 }
 
 void Game::lookAround()
