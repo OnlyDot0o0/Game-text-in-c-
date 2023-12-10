@@ -66,18 +66,17 @@ void Game::processCommand(const string &command)
 
 void Game::displayInventory() const
 {
-    // Check if the player's inventory is empty
     if (mapData.player.inventory.empty())
     {
         std::cout << "Your inventory is empty." << std::endl;
     }
     else
     {
-        // Display the contents of the player's inventory
-        std::cout << "Inventory ";
+        std::cout << "Inventory: ";
         for (const auto &item : mapData.player.inventory)
         {
-            std::cout << "'" << item->id << "' " << endl;
+            // Print the object's ID and address
+            std::cout << "'" << item->id << "' (Address: " << item << ") ";
         }
         std::cout << std::endl;
     }
@@ -85,7 +84,6 @@ void Game::displayInventory() const
 
 void Game::pick(const std::string &objectId)
 {
-    // Check if the object is already in the player's inventory
     auto inventoryIter = std::find_if(
         mapData.player.inventory.begin(), mapData.player.inventory.end(),
         [objectId](const Object *obj)
@@ -104,7 +102,9 @@ void Game::pick(const std::string &objectId)
         {
             if (object.isMatch(objectId) && object.initialRoom == currentRoom.id && !object.isPickedUp)
             {
-                objectToPick = &object;
+                // Use the copy constructor to create a new instance
+                Object *clonedObject = new Object(object);
+                objectToPick = clonedObject;
                 break;
             }
         }
@@ -113,12 +113,14 @@ void Game::pick(const std::string &objectId)
         {
             // Add the object to the player's inventory
             mapData.player.inventory.push_back(objectToPick);
-            std::cout << "You picked up the " << objectId << "." << std::endl;
-            std::cout << "You picked up the " << objectToPick << "." << std::endl;
 
-            // Set the isPickedUp flag to true
+            // Debugging statements
+            std::cout << "You picked up the " << objectId << "." << std::endl;
+            std::cout << "Object in inventory: " << objectToPick->id << " (Address: " << objectToPick << ")" << std::endl;
+
             objectToPick->isPickedUp = true;
             removeObjectFromRoom(objectId, currentRoom.id);
+
             if (std::find(mapData.objective.what.begin(), mapData.objective.what.end(), objectId) != mapData.objective.what.end())
             {
                 collectedGems.push_back(objectId);
@@ -126,8 +128,7 @@ void Game::pick(const std::string &objectId)
         }
         else
         {
-            // Error: The specified object is not in this room
-            std::cerr << "The " << objectId << " is not in this room." << std::endl;
+            std::cerr << "Failed to pick up the " << objectId << "." << std::endl;
         }
     }
     else
@@ -156,23 +157,23 @@ bool Game::isObjectInCurrentRoom(const string &objectId) const
 void Game::removeObjectFromRoom(const string &objectId, const string &roomId)
 {
     // Iterate through objects to find the specified object
-    for (auto it = mapData.objects.begin(); it != mapData.objects.end();)
+    for (auto it = mapData.objects.begin(); it != mapData.objects.end(); ++it)
     {
         // Check if the current object matches the specified object ID and is in the specified room
         if (it->id == objectId && it->initialRoom == roomId)
         {
-            // Erase the specified object from the objects list
+            // Create a copy of the object
+            Object clonedObject = *it;
+
+            // Add the cloned object to the player's inventory
+            mapData.player.inventory.push_back(new Object(clonedObject));
+
+            // Erase the specified object from the room's objects list
             it = mapData.objects.erase(it);
-            return; // Exit the function once the object is removed
-        }
-        else
-        {
-            ++it;
+
+            // No need to return here, as we want to continue the loop to ensure all instances are removed
         }
     }
-
-    // Error: Specified object not found in the specified room
-    cerr << "Error: Object not found in room!" << endl;
 }
 
 void Game::kill(const string &enemyId)
@@ -412,19 +413,12 @@ void Game::look(const string &id)
     }
 
     // Check if the object is in the player's inventory
-    if (isItemInInventory(id, mapData.player.inventory))
+    for (const auto &object : mapData.player.inventory)
     {
-        cout << "Player's inventory contains: " << id << endl;
-
-        // Get the object from the mapData.objects vector using the id
-        auto objectIt = find_if(mapData.objects.begin(), mapData.objects.end(),
-                                [id](const Object &obj)
-                                { return obj.id == id; });
-
-        // Check if the object was found
-        if (objectIt != mapData.objects.end())
+        if (object->id == id)
         {
-            printObjectDescription(*objectIt);
+            cout << "Player's inventory contains: " << id << endl;
+            printObjectDescription(*object);
             return;
         }
     }

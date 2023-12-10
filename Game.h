@@ -18,12 +18,25 @@ public:
 class Object
 {
 public:
-    string id;
-    string desc;
-    string initialRoom;
+    std::string id;
+    std::string desc;
+    std::string initialRoom;
     bool isPickedUp;
+
+    // Constructor
     Object() : isPickedUp(false) {}
-    bool isMatch(const string &objectId) const
+
+    // Copy constructor
+    Object(const Object &other)
+        : id(other.id), desc(other.desc), initialRoom(other.initialRoom), isPickedUp(other.isPickedUp) {}
+
+    // Destructor
+    ~Object()
+    {
+        // Add any necessary cleanup code here
+    }
+
+    bool isMatch(const std::string &objectId) const
     {
         return id == objectId;
     }
