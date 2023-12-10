@@ -23,6 +23,10 @@ public:
     string initialRoom;
     bool isPickedUp;
     Object() : isPickedUp(false) {}
+    bool isMatch(const string &objectId) const
+    {
+        return id == objectId;
+    }
 };
 
 class Enemy
@@ -46,7 +50,7 @@ class Player
 {
 public:
     string initialRoom;
-    vector<string> inventory;
+    vector<Object *> inventory;
     int lives;
     Player() : lives(1){};
 };
@@ -82,12 +86,13 @@ public:
     void kill(const string &enemyId);
     void eat(const string &objectId);
 
-    bool isObjectiveComplete();
+    bool isObjectiveComplete() const;
     bool hasRequiredItems(const Enemy &enemy);
     void handleEnemyAttack(const string &command);
     void removeEnemy(const string &enemyId);
     bool isObjectInCurrentRoom(const string &objectId) const;
     void removeObjectFromRoom(const string &objectId, const string &roomId);
+    // bool isItemInInventory(const std::string &itemId, const std::vector<Object *> &inventory);
 
     void printRoomDescription(const Room &room);
     void printObjectDescription(const Object &object);
@@ -102,6 +107,7 @@ public:
     MapData mapData;
     Room currentRoom;
     vector<string> collectedGems;
+    Player player;
 };
 
 #endif // GAME_H
