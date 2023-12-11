@@ -104,6 +104,7 @@ void Game::pick(const std::string &objectId)
             {
                 // Use the copy constructor to create a new instance
                 Object *clonedObject = new Object(object);
+                clonedObject->isPickedUp = true; // Set the isPickedUp property on the cloned object
                 objectToPick = clonedObject;
                 break;
             }
@@ -112,13 +113,12 @@ void Game::pick(const std::string &objectId)
         if (objectToPick != nullptr)
         {
             // Add the object to the player's inventory
-            mapData.player.inventory.push_back(objectToPick);
+            // mapData.player.inventory.push_back(objectToPick);
 
             // Debugging statements
             std::cout << "You picked up the " << objectId << "." << std::endl;
             std::cout << "Object in inventory: " << objectToPick->id << " (Address: " << objectToPick << ")" << std::endl;
 
-            objectToPick->isPickedUp = true;
             removeObjectFromRoom(objectId, currentRoom.id);
 
             if (std::find(mapData.objective.what.begin(), mapData.objective.what.end(), objectId) != mapData.objective.what.end())
@@ -126,6 +126,7 @@ void Game::pick(const std::string &objectId)
                 collectedGems.push_back(objectId);
             }
         }
+
         else
         {
             std::cerr << "Failed to pick up the " << objectId << "." << std::endl;
