@@ -1,12 +1,78 @@
 #include "Game.h"
 #include <iostream>
 #include <string>
-using namespace std;
+#include <sstream>
+// Function to calculate Levenshtein distance between two strings
+int levenshteinDistance(const std::string &s1, const std::string &s2)
+{
+    int m = s1.length();
+    int n = s2.length();
+
+    // Create a matrix to store distances
+    int dp[m + 1][n + 1];
+
+    // Initialize the matrix
+    for (int i = 0; i <= m; ++i)
+    {
+        for (int j = 0; j <= n; ++j)
+        {
+            if (i == 0)
+            {
+                dp[i][j] = j;
+            }
+            else if (j == 0)
+            {
+                dp[i][j] = i;
+            }
+            else
+            {
+                dp[i][j] = std::min({dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + (s1[i - 1] == s2[j - 1] ? 0 : 1)});
+            }
+        }
+    }
+
+    return dp[m][n];
+}
+
+// Function to correct only the first word of a command based on a list of valid commands
+std::string correctCommand(const std::string &input, const std::vector<std::string> &validCommands)
+{
+    // Split the input into words
+    std::istringstream iss(input);
+    std::string firstWord;
+    iss >> firstWord;
+
+    // Check if the first word is a valid command
+    if (std::find(validCommands.begin(), validCommands.end(), firstWord) != validCommands.end())
+    {
+        // If it is, return the original command
+        return input;
+    }
+
+    // Find the closest matching valid command for the first word
+    std::string correctedFirstWord = firstWord;
+    int minDistance = std::numeric_limits<int>::max();
+
+    for (const auto &validCommand : validCommands)
+    {
+        int distance = levenshteinDistance(firstWord, validCommand);
+        if (distance < minDistance)
+        {
+            minDistance = distance;
+            correctedFirstWord = validCommand;
+        }
+    }
+
+    // Reconstruct the corrected command with the rest of the input
+    std::string correctedCommand = correctedFirstWord + iss.str().substr(firstWord.length());
+
+    return correctedCommand;
+}
 
 // Function to initialize the game
-string initializeGame(int argc, char *argv[])
+std::string initializeGame(int argc, char *argv[])
 {
-    string mapFileName;
+    std::string mapFileName;
 
     // Check if a map name was provided
     if (argc > 1)
@@ -15,106 +81,91 @@ string initializeGame(int argc, char *argv[])
     }
     else
     {
-        cerr << "Error: No map name provided. Please run the program with a map name, like this: './main MapName'" << endl;
+        std::cerr << "Error: No map name provided. Please run the program with a map name, like this: './main MapName'" << std::endl;
         exit(1);
     }
 
     return mapFileName;
 }
 
-// Function to loop through the gmae and user inputs
-void runGameLoop(Game &game)
+bool shouldConfirm(const std::string &command)
 {
-    string userInput;
+    // List of commands that require confirmation
+    std::vector<std::string> commandsRequiringConfirmation = {"quit", "destroy", "delete"};
+
+    // Check if the command is in the list of commands requiring confirmation
+    if (std::find(commandsRequiringConfirmation.begin(), commandsRequiringConfirmation.end(), command) !=
+        commandsRequiringConfirmation.end())
+    {
+        // Ask for confirmation
+        std::string confirmation;
+        std::cout << "Do you want to confirm? (yes/no): ";
+        std::getline(std::cin, confirmation);
+
+        // Return true only if the user confirms with "yes"
+        return (confirmation == "yes");
+    }
+
+    // Return false for commands that don't require confirmation
+    return false;
+}
+// Function to run the game loop
+void runGameLoop(Game &game, const std::vector<std::string> &validCommands)
+{
+    std::string userInput;
     while (true)
     {
-        cout << "\nEnter a command: ";
-        getline(cin, userInput);
-        cout << endl;
+        std::cout << "\nEnter a command: ";
+        std::getline(std::cin, userInput);
+        std::cout << std::endl;
 
         if (userInput == "quit")
         {
-            break;
-        }
-
-        // Convert the user input to lowercase for case-insensitivity
-        transform(userInput.begin(), userInput.end(), userInput.begin(), ::tolower);
-
-        if (userInput.substr(0, 2) == "go")
-        {
-            if (userInput.length() > 3)
+            if (shouldConfirm(userInput))
             {
-                string direction = userInput.substr(3);
-                game.go(direction);
+                // Handle confirmation
+                std::cout << "Confirmed! Exiting the game." << std::endl;
+                break;
             }
             else
             {
-                cout << "You need to specify a direction to go." << endl;
+                // User canceled the confirmation
+                std::cout << "Canceled quitting." << std::endl;
             }
-        }
-        else if (userInput.find("take") != string::npos)
-        {
-            if (userInput.length() > 5)
-            {
-                string objectId = userInput.substr(5);
-                game.pick(objectId);
-            }
-            else
-            {
-                cout << "You need to specify an item id to pick up." << endl;
-            }
-        }
-        else if (userInput.find("kill") != string::npos)
-        {
-            if (userInput.length() > 5)
-            {
-                string enemyId = userInput.substr(5);
-                game.kill(enemyId);
-            }
-            else
-            {
-                cout << "You need to specify an enemy id to kill." << endl;
-            }
-        }
-        else if (userInput.find("list items") != string::npos)
-        {
-            game.displayInventory();
-        }
-        else if (userInput.find("eat") != string::npos)
-        {
-            if (userInput.length() > 4)
-            {
-                string food = userInput.substr(4);
-                game.eat(food);
-            }
-            else
-            {
-                cout << "You need to specify what you want to eat." << endl;
-            }
-        }
-        else if (userInput == "look")
-        {
-            game.lookAround();
         }
         else
         {
-            game.processCommand(userInput);
-        }
-        if (game.isObjectiveComplete())
-        {
-            cout << "Congratulations! You have completed the objective. You win!" << endl;
-            break;
+            // Correct only the first word of the command
+            std::string correctedCommand = correctCommand(userInput, validCommands);
+
+            // Process the corrected command only if it's different from the original command
+            if (correctedCommand != userInput)
+            {
+                std::cout << "Did you mean: " << correctedCommand << std::endl;
+            }
+
+            game.processCommand(correctedCommand);
+
+            if (game.isObjectiveComplete())
+            {
+                std::cout << "Congratulations! You have completed the objective. You win!" << std::endl;
+                break;
+            }
         }
     }
 }
 
 int main(int argc, char *argv[])
 {
-    string mapFileName = initializeGame(argc, argv);
+    std::string mapFileName = initializeGame(argc, argv);
 
     Game game(mapFileName);
     game.startGame();
-    runGameLoop(game);
+
+    std::vector<std::string> validCommands = {"look", "go", "take", "kill", "list", "list items", "eat", "quit"};
+
+    // Run the game loop
+    runGameLoop(game, validCommands);
 
     return 0;
 }

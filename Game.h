@@ -105,6 +105,7 @@ public:
     void removeEnemy(const string &enemyId);
     bool isObjectInCurrentRoom(const string &objectId) const;
     void removeObjectFromRoom(const string &objectId, const string &roomId);
+    string trim(const string &str);
     // bool isItemInInventory(const std::string &itemId, const std::vector<Object *> &inventory);
 
     void printRoomDescription(const Room &room);

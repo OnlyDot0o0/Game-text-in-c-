@@ -6,6 +6,10 @@
 #include <cstdlib>
 #include <ctime>
 #include <random>
+#include <iterator>
+#include <vector>
+#include <sstream>
+
 using namespace std;
 
 using json = nlohmann::json;
@@ -28,40 +32,91 @@ void Game::startGame()
     printRoomDescription(currentRoom);
 }
 
-void Game::processCommand(const string &command)
+void Game::processCommand(const std::string &command)
 {
     // Convert the command to lowercase for case-insensitivity
-    string lowercaseCommand = command;
-    transform(lowercaseCommand.begin(), lowercaseCommand.end(), lowercaseCommand.begin(), ::tolower);
+    std::string lowercaseCommand = command;
+    std::transform(lowercaseCommand.begin(), lowercaseCommand.end(), lowercaseCommand.begin(), ::tolower);
 
-    if (lowercaseCommand.find("look around") != string::npos)
+    // Remove leading and trailing whitespaces
+    lowercaseCommand = trim(lowercaseCommand);
+
+    // Split the command into words
+    std::istringstream iss(lowercaseCommand);
+    std::vector<std::string> words(std::istream_iterator<std::string>{iss}, std::istream_iterator<std::string>());
+
+    if (words.empty())
+    {
+        std::cout << "Invalid command. Type 'look around', 'look xxx', 'go xxx', 'take xxx', 'kill xxx', 'list items', or 'quit'" << std::endl;
+        return;
+    }
+
+    const std::string &firstWord = words.front();
+
+    // Special case for "look " to treat it the same as "look"
+    if (firstWord == "look" && words.size() == 1)
     {
         lookAround();
     }
-    else if (lowercaseCommand.substr(0, 4) == "look")
+    else if (firstWord == "look" && words.size() > 1)
     {
-        string id = lowercaseCommand.substr(5);
+        // Concatenate the remaining words to form the item id
+        std::string id = words[1];
+        for (size_t i = 2; i < words.size(); ++i)
+        {
+            id += " " + words[i];
+        }
+
         look(id);
     }
-    else if (lowercaseCommand.substr(0, 2) == "go")
+    else if (firstWord == "go" && words.size() > 1)
     {
-        string direction = lowercaseCommand.substr(3);
+        std::string direction = words[1];
         go(direction);
     }
-    else if (lowercaseCommand.find("take") != string::npos)
+    else if (firstWord == "take" && words.size() > 1)
     {
-        string objectId = lowercaseCommand.substr(5);
+        // Concatenate the remaining words to form the item id
+        std::string objectId = words[1];
+        for (size_t i = 2; i < words.size(); ++i)
+        {
+            objectId += " " + words[i];
+        }
+
         pick(objectId);
     }
-    else if (lowercaseCommand.find("kill") != string::npos)
+    else if (firstWord == "kill" && words.size() > 1)
     {
-        string enemyId = lowercaseCommand.substr(5);
+        // Concatenate the remaining words to form the enemy id
+        std::string enemyId = words[1];
+        for (size_t i = 2; i < words.size(); ++i)
+        {
+            enemyId += " " + words[i];
+        }
+
         kill(enemyId);
     }
+    else if (firstWord == "list" && (words.size() == 1 || (words.size() == 2 && words[1] == "items")))
+    {
+        displayInventory();
+    }
+
     else
     {
-        cout << "Invalid command. Type 'look around', 'look xxx', 'go xxx', 'take xxx', or 'kill xxx', or 'quit' or 'list items'" << endl;
+        std::cout << "Invalid command. Type 'look around', 'look xxx', 'go xxx', 'take xxx', 'kill xxx', 'list items', or 'quit'" << std::endl;
     }
+}
+
+// Helper function to trim leading and trailing whitespaces
+string Game::trim(const string &str)
+{
+    size_t first = str.find_first_not_of(' ');
+    if (string::npos == first)
+    {
+        return str;
+    }
+    size_t last = str.find_last_not_of(' ');
+    return str.substr(first, (last - first + 1));
 }
 
 void Game::displayInventory() const
@@ -84,6 +139,7 @@ void Game::displayInventory() const
 
 void Game::pick(const std::string &objectId)
 {
+    // Check if the object is already in the player's inventory
     auto inventoryIter = std::find_if(
         mapData.player.inventory.begin(), mapData.player.inventory.end(),
         [objectId](const Object *obj)
@@ -112,21 +168,40 @@ void Game::pick(const std::string &objectId)
 
         if (objectToPick != nullptr)
         {
-            // Add the object to the player's inventory
-            // mapData.player.inventory.push_back(objectToPick);
+            // Check if the object is not already in the inventory
+            auto inventoryIter = std::find_if(
+                mapData.player.inventory.begin(), mapData.player.inventory.end(),
+                [objectId](const Object *obj)
+                { return obj->id == objectId; });
 
-            // Debugging statements
-            std::cout << "You picked up the " << objectId << "." << std::endl;
-            std::cout << "Object in inventory: " << objectToPick->id << " (Address: " << objectToPick << ")" << std::endl;
-
-            removeObjectFromRoom(objectId, currentRoom.id);
-
-            if (std::find(mapData.objective.what.begin(), mapData.objective.what.end(), objectId) != mapData.objective.what.end())
+            if (inventoryIter == mapData.player.inventory.end())
             {
-                collectedGems.push_back(objectId);
+                // Add the object to the player's inventory
+                mapData.player.inventory.push_back(objectToPick);
+
+                // Debugging statements
+                std::cout << "You picked up the " << objectId << "." << std::endl;
+                std::cout << "Object in inventory: " << objectToPick->id << " (Address: " << objectToPick << ")" << std::endl;
+
+                removeObjectFromRoom(objectId, currentRoom.id);
+
+                // Check if the object is part of objectives before pushing to collectedGems
+                if (std::find(mapData.objective.what.begin(), mapData.objective.what.end(), objectId) != mapData.objective.what.end())
+                {
+                    // Check if the object is not already in the objectives list
+                    if (std::find(collectedGems.begin(), collectedGems.end(), objectId) == collectedGems.end())
+                    {
+                        collectedGems.push_back(objectId);
+                    }
+                }
+            }
+            else
+            {
+                std::cerr << "You have already picked up the " << objectId << "." << std::endl;
+                // Delete the cloned object to avoid memory leaks
+                delete objectToPick;
             }
         }
-
         else
         {
             std::cerr << "Failed to pick up the " << objectId << "." << std::endl;
@@ -158,7 +233,7 @@ bool Game::isObjectInCurrentRoom(const string &objectId) const
 void Game::removeObjectFromRoom(const string &objectId, const string &roomId)
 {
     // Iterate through objects to find the specified object
-    for (auto it = mapData.objects.begin(); it != mapData.objects.end(); ++it)
+    for (auto it = mapData.objects.begin(); it != mapData.objects.end();)
     {
         // Check if the current object matches the specified object ID and is in the specified room
         if (it->id == objectId && it->initialRoom == roomId)
@@ -166,13 +241,14 @@ void Game::removeObjectFromRoom(const string &objectId, const string &roomId)
             // Create a copy of the object
             Object clonedObject = *it;
 
-            // Add the cloned object to the player's inventory
-            mapData.player.inventory.push_back(new Object(clonedObject));
-
             // Erase the specified object from the room's objects list
             it = mapData.objects.erase(it);
 
             // No need to return here, as we want to continue the loop to ensure all instances are removed
+        }
+        else
+        {
+            ++it; // Increment the iterator only if the object is not erased
         }
     }
 }
