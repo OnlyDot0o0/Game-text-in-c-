@@ -86,47 +86,44 @@ void Game::pick(const string &objectId)
         return;
     }
 
-    if (isObjectInCurrentRoom(objectId))
+    // Special condition for picking up the key
+    if (objectId == "key") {
+        auto statueIter = find_if(mapData.enemies.begin(), mapData.enemies.end(), 
+                                  [](const Enemy &enemy) { return enemy.id == "stone statue" && !enemy.isKilled; });
+        if (statueIter != mapData.enemies.end()) {
+            cerr << "The stone statue is guarding the key. You can't pick it up without dealing with the statue first." << endl;
+            return;
+        }
+    }
+
+    // Check if the specified object is in the current room
+    Object* objectToPick = nullptr;
+    for (auto &object : mapData.objects)
     {
-        // Check if the specified object is in the current room
-        Object *objectToPick = nullptr;
-        for (auto &object : mapData.objects)
+        if (object.id == objectId && object.initialRoom == currentRoom.id && !object.isPickedUp)
         {
-            if (object.id == objectId && object.initialRoom == currentRoom.id)
-            {
-                objectToPick = &object;
-                break;
-            }
+            objectToPick = &object;
+            break;
         }
+    }
 
-        if (objectToPick != nullptr)
-        {
-            if (!objectToPick->isPickedUp)
-            {
-                // Add the object to the player's inventory
-                mapData.player.inventory.push_back(objectId);
-                cout << "You picked up the " << objectId << "." << endl;
+    if (objectToPick != nullptr)
+    {
+        // Add the object to the player's inventory
+        mapData.player.inventory.push_back(objectId);
+        cout << "You picked up the " << objectId << "." << endl;
 
-                // Set the isPickedUp flag to true
-                objectToPick->isPickedUp = true;
-                removeObjectFromRoom(objectId, currentRoom.id);
-                if (find(mapData.objective.what.begin(), mapData.objective.what.end(), objectId) != mapData.objective.what.end())
-                {
-                    collectedGems.push_back(objectId);
-                }
-            }
-        }
-        else
-        {
-            // Error: The specified object is not in this room
-            cerr << "The " << objectId << " is not in this room." << endl;
-        }
+        // Set the isPickedUp flag to true
+        objectToPick->isPickedUp = true;
+        removeObjectFromRoom(objectId,currentRoom.id);
     }
     else
     {
-        cerr << "You can't pick up " << objectId << "." << endl;
+        cerr << "The " << objectId << " is not in this room." << endl;
     }
 }
+
+
 
 bool Game::isObjectInCurrentRoom(const string &objectId) const
 {
@@ -148,24 +145,21 @@ bool Game::isObjectInCurrentRoom(const string &objectId) const
 void Game::removeObjectFromRoom(const string &objectId, const string &roomId)
 {
     // Iterate through objects to find the specified object
-    for (auto it = mapData.objects.begin(); it != mapData.objects.end();)
+    for (auto &object : mapData.objects)
     {
         // Check if the current object matches the specified object ID and is in the specified room
-        if (it->id == objectId && it->initialRoom == roomId)
+        if (object.id == objectId && object.initialRoom == roomId)
         {
-            // Erase the specified object from the objects list
-            it = mapData.objects.erase(it);
-            return; // Exit the function once the object is removed
-        }
-        else
-        {
-            ++it;
+            // Instead of erasing, mark the object as picked up
+            object.isPickedUp = true;
+            return; // Exit the function once the object's status is updated
         }
     }
 
     // Error: Specified object not found in the specified room
     cerr << "Error: Object not found in room!" << endl;
 }
+
 
 void Game::kill(const string &enemyId)
 {
@@ -182,9 +176,20 @@ void Game::kill(const string &enemyId)
             transform(lowercaseId.begin(), lowercaseId.end(), lowercaseId.begin(), ::tolower);
             return lowercaseId == lowercaseEnemyId;
         });
-
-    if (enemyIter != mapData.enemies.end() && !enemyIter->isKilled)
+    if (enemyIter != mapData.enemies.end())
     {
+        // Special case: Enemy cannot be killed or requires "nothing" to kill
+        if (enemyIter->killedBy.size() == 1 && enemyIter->killedBy[0] == "nothing")
+        {
+            if (!enemyIter->unsuccessful_kill_msg.empty())
+            {
+                cout << enemyIter->unsuccessful_kill_msg << endl;
+                cout << "Game Over" << endl;
+                exit(0);
+            }
+            return; // Return early to skip normal kill logic
+        }
+
         // cout << "Enemy found: " << enemyIter->id << endl;
         if (hasRequiredItems(*enemyIter))
         {
@@ -225,8 +230,10 @@ void Game::kill(const string &enemyId)
             }
             else
             {
-
+            if (!(enemyIter->killedBy.size() == 1 && enemyIter->killedBy[0] == "nothing"))
+            {
                 cout << "You don't have the required items to kill the " << enemyId << "!" << endl;
+            }
                 // Check if the player has an extra life
                 if (mapData.player.lives > 1)
                 {
@@ -249,61 +256,6 @@ void Game::kill(const string &enemyId)
     }
 }
 
-// void Game::kill(const string& enemyId) {
-//     vector<string> nonExhaustibleItems = {"gun"};
-//     string lowercaseEnemyId = enemyId;
-//     transform(lowercaseEnemyId.begin(), lowercaseEnemyId.end(), lowercaseEnemyId.begin(), ::tolower);
-
-//     auto enemyIter = find_if(
-//         mapData.enemies.begin(), mapData.enemies.end(),
-//         [&lowercaseEnemyId](const Enemy& enemy) {
-//             string lowercaseId = enemy.id;
-//             transform(lowercaseId.begin(), lowercaseId.end(), lowercaseId.begin(), ::tolower);
-
-//             // Check if the lowercaseEnemyId is a substring of lowercaseId
-//             return lowercaseId.find(lowercaseEnemyId) != string::npos && !enemy.isKilled;
-//         });
-
-//     if (enemyIter != mapData.enemies.end()) {
-//         // Check if the player has the required items
-//         if (hasRequiredItems(*enemyIter)) {
-//             // Mark the enemy as killed
-//             enemyIter->isKilled = true;
-//             if (!enemyIter->successful_kill_msg.empty()) {
-//                 cout << enemyIter->successful_kill_msg << endl;
-//             } else {
-//                 cout << "You killed the " << enemyId << "." << endl;
-//             }
-
-//             // Remove required items from the player's inventory
-//             for (const auto& item : enemyIter->killedBy) {
-//                 // Only remove the item if it's not in the nonExhaustibleItems list
-//                 if (find(nonExhaustibleItems.begin(), nonExhaustibleItems.end(), item) == nonExhaustibleItems.end()) {
-//                     auto itemIter = find(mapData.player.inventory.begin(), mapData.player.inventory.end(), item);
-//                     if (itemIter != mapData.player.inventory.end()) {
-//                         mapData.player.inventory.erase(itemIter);
-//                     }
-//                 }
-//             }
-
-//             removeEnemy(enemyId);
-//         } else {
-//             if (!enemyIter->unsuccessful_kill_msg.empty()) {
-//                 cout << enemyIter->unsuccessful_kill_msg << endl;
-//                 cout << "Game Over" << endl;
-//                 exit(0);
-//             } else {
-//                 // Inside kill function
-//                 cout << "You don't have the required items to kill the " << enemyId << "!" << endl;
-//                 cout << "The " << enemyId << " attacks you and you die." << endl;
-//                 cout << "Game over!" << endl;
-//                 exit(0);  // Exit the program
-//             }
-//         }
-//     } else {
-//         cerr << "Error: Enemy not found or already killed." << endl;
-//     }
-// }
 
 void Game::eat(const string &objectId)
 {
@@ -379,46 +331,45 @@ void Game::lookAround()
 
 void Game::look(const string &id)
 {
-    // Search for the object in the rooms
+    // First, search for the object in the current room
     for (const auto &object : mapData.objects)
     {
-        if (object.id == id)
+        if (object.id == id && object.initialRoom == currentRoom.id && !object.isPickedUp)
         {
             printObjectDescription(object);
             return;
         }
     }
 
-    // Search for the enemy
+    // If not found in the room, check the player's inventory
+    auto inventoryIter = find(mapData.player.inventory.begin(), mapData.player.inventory.end(), id);
+    if (inventoryIter != mapData.player.inventory.end())
+    {
+        // Find the object in the mapData.objects for its description
+        auto objectIter = find_if(mapData.objects.begin(), mapData.objects.end(), 
+                                  [&id](const Object &obj) { return obj.id == id; });
+        if (objectIter != mapData.objects.end())
+        {
+            printObjectDescription(*objectIter);
+            return;
+        }
+    }
+
+    // If not found, search for the enemy in the current room
     for (const auto &enemy : mapData.enemies)
     {
-        if (enemy.id == id)
+        if (enemy.id == id && enemy.initialRoom == currentRoom.id && !enemy.isKilled)
         {
             printEnemyDescription(enemy);
             return;
         }
     }
 
-    // Check if the object is in the player's inventory
-    auto it = find(mapData.player.inventory.begin(), mapData.player.inventory.end(), id);
-    if (it != mapData.player.inventory.end())
-    {
-        // Get the object from the mapData.objects vector using the id
-        auto objectIt = find_if(mapData.objects.begin(), mapData.objects.end(),
-                                [id](const Object &obj)
-                                { return obj.id == id; });
-
-        // Check if the object was found
-        if (objectIt != mapData.objects.end())
-        {
-            printObjectDescription(*objectIt);
-            return;
-        }
-    }
-
-    // If the function hasn't returned yet, the id was not found
+    // If the object/enemy is neither in the room nor in the inventory
     cout << "I'm sorry, I couldn't find any object or enemy with the id '" << id << "'." << endl;
 }
+
+
 
 void Game::go(const string &direction)
 {
@@ -652,7 +603,7 @@ void Game::printRoomDescription(const Room &room)
 
 void Game::printObjectDescription(const Object &object)
 {
-    cout << "Interesting. Is that a " << object.id << "? " << object.desc << endl;
+    cout << object.desc << endl;
 }
 
 void Game::printObjectID(const Object &object)
