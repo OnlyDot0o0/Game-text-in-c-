@@ -7,22 +7,28 @@
 using namespace std;
 #include <unordered_map>
 
-class Room
-{
+enum class ObjectStatus {
+    InRoom,
+    InInventory
+};
+
+class Room {
 public:
     string id;
     string desc;
     unordered_map<string, string> exits;
+    
 };
 
-class Object
-{
+class Object {
 public:
     string id;
     string desc;
     string initialRoom;
+    ObjectStatus status; // Added status field
     bool isPickedUp;
-    Object() : isPickedUp(false) {}
+
+    Object() : status(ObjectStatus::InRoom) {} // Default status is InRoom
 };
 
 class Enemy
