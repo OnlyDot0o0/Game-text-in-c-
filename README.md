@@ -1,4 +1,3 @@
-My apologies for misunderstanding your request. Thank you for clarifying! Let's proceed with the revised README file:
 
 # Text Adventure Game
 
