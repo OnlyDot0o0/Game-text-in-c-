@@ -1,7 +1,7 @@
 
 # Text Adventure Game
 
-This is a text adventure game developed as part of the CO3105/4105/7105 Assignment. The game is built according to the instructions provided in the assignment document and includes some additional advanced features.
+This is a text adventure game developed as part of a project in my third year at the University of Leicester. The game is built according to the instructions provided in the assignment document and includes some additional advanced features.
 
 ## Game Description
 
